@@ -8,7 +8,7 @@ const BACKOFF_TIME_MS = 2000
 const MAX_RETRIES = 3
 
 function randomString() {
-  var A = 'a'.charCodeAt(0)
+  let A = 'a'.charCodeAt(0)
 
   return '            '
     .split('')
@@ -27,9 +27,9 @@ function mapKeys(object, mapFunction) {
   else {
     return Object.keys(object)
       .reduce((newObject, key) => {
-        var value = object[key]
+        let value = object[key]
 
-        if (typeof value == 'object') {
+        if (typeof value === 'object') {
           value = mapKeys(value, mapFunction)
         }
 
@@ -55,9 +55,9 @@ function snakeCaseToCamelCase(snakeCaseString) {
 }
 
 function dateToString(date) {
-  var dateWithMillis = date.toISOString()
+  let dateWithMillis = date.toISOString()
   
-  var dateWithoutMillis = dateWithMillis.slice(0, - '.000Z'.length) + 'Z'
+  let dateWithoutMillis = dateWithMillis.slice(0, - '.000Z'.length) + 'Z'
 
   return dateWithoutMillis
 }
@@ -92,7 +92,7 @@ export class BlueCodeClient {
     timeoutMs = timeoutMs || DEFAULT_TIMEOUT_MS
 
     return new Promise((resolve, reject) => {
-      var retry = async () => {
+      let retry = async () => {
         if (retryIndex < MAX_RETRIES) {
           await wait(BACKOFF_TIME_MS)
 
@@ -107,7 +107,7 @@ export class BlueCodeClient {
         }
       }
 
-      var xhr = new XMLHttpRequest()
+      let xhr = new XMLHttpRequest()
   
       xhr.open('POST', this.baseUrl + endpoint, true)
 
@@ -118,11 +118,11 @@ export class BlueCodeClient {
       xhr.setRequestHeader('Authorization', 'Basic ' + window.btoa(this.username + ':' + this.password))
 
       xhr.onreadystatechange = () => {
-        if (xhr.readyState == XMLHttpRequest.DONE) {
+        if (xhr.readyState === XMLHttpRequest.DONE) {
           if (xhr.status >= 200 && xhr.status < 300) {
             resolve(xhr.response)
           }
-          else if (xhr.status == 0) {
+          else if (xhr.status === 0) {
             retry()
           }
           else {
@@ -134,9 +134,9 @@ export class BlueCodeClient {
       xhr.send(JSON.stringify(mapKeys(payload, camelCaseToSnakeCase)))
     })
     .then(json => {
-      var result = mapKeys(json, snakeCaseToCamelCase)
+      let result = mapKeys(json, snakeCaseToCamelCase)
 
-      if (result.result == 'ERROR') {
+      if (result.result === 'ERROR') {
         throw new Error('Call to ' + endpoint + ' failed: ' + JSON.stringify(result))
       }
 
@@ -163,15 +163,15 @@ export class BlueCodeClient {
   }
 
   async payAndWaitForProcessing(paymentOptions) {
-    var response = await this.call('/payment', paymentOptions)
+    let response = await this.call('/payment', paymentOptions)
   
-    var startTime = new Date().getTime()
+    let startTime = new Date().getTime()
 
-    while (response.result == 'PROCESSING') {
+    while (response.result === 'PROCESSING') {
       /** @type {processingStatus} */
-      var paymentStatus = response.status
+      let paymentStatus = response.status
       
-      var timeElapsed = new Date().getTime() - startTime
+      let timeElapsed = new Date().getTime() - startTime
 
       if (timeElapsed > paymentStatus.ttl) {
         throw new Error('Payment timed out.')
@@ -192,7 +192,7 @@ export class BlueCodeClient {
    */
   async pay(paymentOptions) {
     /** @type {paymentOptions} */
-    var defaults = {
+    let defaults = {
       scheme: 'AUTO',
       currency: 'EUR',
       merchantTxId: generateMerchantTxId(),
@@ -206,7 +206,7 @@ export class BlueCodeClient {
     requireAttribute(paymentOptions, 'requestedAmount')
 
     /** @type {paymentResponse} */
-    var response
+    let response
 
     try {
       response = await this.payAndWaitForProcessing(paymentOptions)
@@ -224,7 +224,7 @@ export class BlueCodeClient {
       throw new Error('Unexpected response to payment call.')
     }
 
-    if (!response.payment.state != 'APPROVED') {
+    if (response.payment.state !== 'APPROVED') {
       throw new Error('Payment failed: ' + response.payment.state + ', code ' + response.payment.code)
     }
 

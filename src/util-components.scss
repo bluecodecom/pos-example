@@ -1,0 +1,267 @@
+@import 'variables.scss';
+
+/* -----------------------------------------------------
+  Button derived from Material Design Buttons by Ravikumar Chauhan
+  https://codepen.io/rkchauhan/pen/NNKgJY
+  GitHub: https://github.com/rkchauhan
+-------------------------------------------------------- */
+button {
+  display: inline-block;
+  position: relative;
+  cursor: pointer;
+  height: 35px;
+  line-height: 35px;
+  padding: 0 1.5rem;
+  color: #424242;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: 'Roboto', sans-serif;
+  letter-spacing: .8px;
+  text-align: center;
+  text-decoration: none;
+  text-transform: uppercase;
+  vertical-align: middle;
+  white-space: nowrap;
+  outline: none;
+  border: none;
+  user-select: none;
+  border-radius: 2px;
+  transition: all .3s ease-out;
+  box-shadow: 0 2px 5px 0 rgba(0,0,0,0.225);
+
+  &:hover { 
+    text-decoration: none; 
+    box-shadow: 0 4px 10px 0px rgba(0,0,0,0.225); 
+  }
+
+  &.inverse {
+    color: #FFF;
+    background-color: $inverted-background-color;
+    &:hover { background-color: lighten($inverted-background-color, 6%); }
+  }
+
+  &.disabled, &[disabled] {
+    cursor: default !important;
+    color: #9e9e9e !important;
+    box-shadow: none !important;
+  }
+
+  &.disabled:not(.flat), &[disabled]:not(.flat) {
+    background-color: #cdcdcd !important;
+    &:hover { background-color: #cdcdcd !important; }
+  }
+
+  &.flat {
+    box-shadow: none !important;
+    background-color: transparent !important;
+    &:hover { background-color: #cecece !important; box-shadow: none !important; }
+
+    &.disabled:hover,
+    &[disabled]:hover { background-color: transparent !important; }
+  }
+}
+
+.modal-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  // needed to cover up the bottom shadow of the parent 
+  // since it extends outside the parent's bounds
+  bottom: -5px;
+
+  background-color: rgba(255,255,255,0.8);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  .content {
+    z-index: 2;
+  }
+
+  // covers the whole screen so we can detect clicking 
+  // outside the modal.
+  .click-bait {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1;
+  }
+}
+
+.card {
+  .title {
+    background-color: $light-background-color;
+    color: $inverted-foreground-color;
+    font-size: $font-size-large;
+    display: flex;
+
+    > div {
+      padding: 2 * $unit;
+    }
+
+    .name {      
+      flex-grow: 1;
+    }
+    
+    align-items: center;
+
+    .action {
+      align-items: center;
+      justify-content: center;
+      display: flex;
+      flex-direction: row;
+      
+      border-radius: 9999px;
+      
+      margin-right: $unit;
+      transition: background-color 0.4s cubic-bezier(.25,.8,.25,1);
+      
+      &:hover {
+        background-color: lighten($light-background-color, 6%);
+      }
+
+      img {
+        position: absolute;
+      }
+    }
+  }
+
+  .body {
+    flex-grow: 1;
+  }
+
+  flex-direction: column;
+  display: flex;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
+  flex-grow: 1;
+  margin-right: 2 * $unit;
+}
+
+/**
+  * Derived from
+  * https://scotch.io/tutorials/css/google-material-design-input-boxes-in-css3
+  */
+.text-input {
+  position: relative;
+  margin-top: 32px;
+  margin-bottom: 32px;
+
+  input {
+    font-size: 18px;
+    padding: 10px 10px 10px 5px;
+    display: block;
+    width: 300px;
+    border: none;
+    border-bottom: 1px solid #757575;
+  }
+
+  input:focus {
+    outline: none;
+  }
+
+  label {
+    color: #999;
+    font-size: 18px;
+    font-weight: normal;
+    position: absolute;
+    pointer-events: none;
+    left: 5px;
+    top: 10px;
+    transition: 0.2s ease all;
+    -moz-transition: 0.2s ease all;
+    -webkit-transition: 0.2s ease all;
+  }
+
+  /* active state */
+  input:focus ~ label, input:valid ~ label {
+    top: -20px;
+    font-size: 14px;
+    color: #5264AE;
+  }
+
+  .bar {
+    position: relative;
+    display: block;
+    width: 300px;
+
+    &:before, &:after {
+      content: '';
+      height: 2px;
+      width: 0;
+      bottom: 1px;
+      position: absolute;
+      background: #5264AE;
+      transition: 0.2s ease all;
+      -moz-transition: 0.2s ease all;
+      -webkit-transition: 0.2s ease all;
+    }
+
+    &:before {
+      left: 50%;
+    }
+
+    &:after {
+      right: 50%;
+    }
+  }
+
+  /* active state */
+  input:focus ~ .bar:before, input:focus ~ .bar:after {
+    width: 50%;
+  }
+
+  /* HIGHLIGHTER ================================== */
+  .highlight {
+    position: absolute;
+    height: 60%;
+    width: 100px;
+    top: 25%;
+    left: 0;
+    pointer-events: none;
+    opacity: 0.5;
+  }
+
+  /* active state */
+  input:focus ~ .highlight {
+    -webkit-animation: inputHighlighter 0.3s ease;
+    -moz-animation: inputHighlighter 0.3s ease;
+    animation: inputHighlighter 0.3s ease;
+  }
+
+  @-webkit-keyframes inputHighlighter {
+    from {
+      background: #5264AE;
+    }
+
+    to {
+      width: 0;
+      background: transparent;
+    }
+  }
+
+  @-moz-keyframes inputHighlighter {
+    from {
+      background: #5264AE;
+    }
+
+    to {
+      width: 0;
+      background: transparent;
+    }
+  }
+
+  @keyframes inputHighlighter {
+    from {
+      background: #5264AE;
+    }
+
+    to {
+      width: 0;
+      background: transparent;
+    }
+  }
+}

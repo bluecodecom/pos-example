@@ -14,10 +14,11 @@ body {
 
 .App {
   display: flex;
+  position: relative;
 
   width: 700px;
 
-  > div {
+  > .card {
     width: 50%;
   }
 }

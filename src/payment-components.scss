@@ -1,0 +1,62 @@
+@import 'variables.scss';
+
+$dialogMargin: 2 * $unit;
+
+.magic-barcodes-list {
+  max-height: 14 * $unit;
+  overflow-y: scroll;
+
+  box-shadow: inset 0 1px 2.5px 0px rgba(0,0,0,0.225); 
+
+  margin: 2 * $unit (-$dialogMargin);
+  padding: 0 $dialogMargin;
+  border-top: 1px solid $light-line-color;
+  border-bottom: 1px solid $light-line-color;
+  
+  .barcode {
+    margin: $unit;
+    display: flex;
+    cursor: pointer;
+    transition: color 0.2s;
+
+    &:hover {
+      color: lighten($text-color, 10%);
+    }
+
+    .logo {
+      width: 1.3em;
+      margin-right: 0.5em;
+
+      img {
+        width: 100%;
+      }
+    }
+  }
+}
+
+.payment-dialog {
+  width: 400px;
+  background-color: $background-color;
+  box-shadow: 0 4px 10px 0px rgba(0,0,0,0.225); 
+
+  .title {
+    background-color: $inverted-background-color;
+  }
+
+  .body {
+    padding: $dialogMargin;
+    color: $text-color;
+
+    .barcode-label {
+      font-weight: 500;
+      margin-top: 6 * $unit;
+      margin-bottom: 2 * $unit;
+    }
+
+    .button-bar {
+      margin-top: 4 * $unit;
+      display: flex;
+      justify-content: flex-end;
+    }
+  }
+}

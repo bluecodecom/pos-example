@@ -1,6 +1,12 @@
-import React, { Component } from 'react'
+import React from 'react'
 import { PRODUCTS } from './model'
 import './ordering-components.css'
+import { Card, Button } from './util-components'
+
+/** 
+ * These are the components involved in the ordering screen 
+ * (product selection and order total display).
+ */
 
 /**
  * Number to string with two decimal places.
@@ -16,51 +22,13 @@ function formatNumber(number) {
 }
 
 /**
- * A material design-style button.
- * @param {Object} props
- * @param {string} props.type Either 'flat' or 'inverse' (for white-on-dark button)
- */
-function Button(props) {
-  return <button className={ props.type }>Cash</button>
-}
-
-/**
- * A material design-style card.
- * @param {Object} props
- * @param {string} props.title Title at the top of the card.
- * @param {string[]} props.actions An optional array of actions. They values are strings 
- *                                 that must correspond to images in the img directory.
- * @param {(string) => void} props.onAction
- */
-function Card(props) {
-  return <div className={'card ' + props.className}>
-    <div className='title'>
-      <div class='name'>
-        { props.title }
-      </div>
-
-      {
-        (props.actions || []).map(action => 
-          <div class='action' key={ action } onClick={ () => props.onAction(action) }>
-            <img src={ 'img/' + action + '.svg' }/>
-          </div>
-        )
-      }
-    </div>
-    <div className='body'>
-      { props.children }
-    </div>
-  </div>
-}
-
-/**
  * A clickable product image
  * @param {Object} props
  * @param {Product} props.product
  */
 function ProductButton(props) {
   return <div className='product-button' onClick={ () => props.onProductSelect(props.product) }>
-    <img src={ 'img/' + props.product.name + '.svg' }/>
+    <img src={ 'img/' + props.product.name + '.svg' } alt={ props.product.name } />
   </div>
 }
 
@@ -127,11 +95,13 @@ function OrderTotalPanel(props) {
 
 /**
  * Button bar showing buttons for the payment methods.
+ * @param {Object} props
+ * @param {() => void} props.onPayment
  */
 function PaymentPanel(props) {
   return <div className='payment-panel'>
     <Button type='flat'>Cash</Button>
-    <Button type='inverse'>Blue Code</Button>
+    <Button type='inverse' onClick={ props.onPayment }>Blue Code</Button>
   </div>
 }
 
@@ -140,13 +110,22 @@ function PaymentPanel(props) {
  * @param {Object} props
  * @param {Order} props.order
  * @param {() => void} props.onClear
+ * @param {() => void} props.onPayment
  */
 export function OrderCard(props) {
   return (
-    <Card title='Order' className='order-card' actions={ [ 'ic_clear_white_24px' ] } onAction={ ()=> props.onClear() }>
-      <OrderItemsPanel orderItems={ props.order.orderItems }/>
-      <OrderTotalPanel order={ props.order }/>
-      <PaymentPanel/>
+    <Card title='Order' 
+        className='order-card' 
+        actions={ [ 'ic_clear_white_24px' ] } 
+        onAction={ ()=> props.onClear() }>
+      <OrderItemsPanel 
+        orderItems={ props.order.orderItems }/>
+
+      <OrderTotalPanel 
+        order={ props.order }/>
+
+      <PaymentPanel 
+        onPayment={ props.onPayment }/>
     </Card>
   )
 }

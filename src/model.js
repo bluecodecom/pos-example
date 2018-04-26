@@ -1,3 +1,5 @@
+import './typedefs'
+
 const VAT_RATE = 0.17
 
 export class Product {
@@ -43,10 +45,10 @@ export class Order {
    * @param {Product} product 
    */
   add(product) {
-    var newItems = this.orderItems.map(
+    let newItems = this.orderItems.map(
       item => item.product === product ? item.increaseCount() : item)
 
-    var orderItem = newItems.find(item => item.product === product) 
+    let orderItem = newItems.find(item => item.product === product) 
   
     if (!orderItem) {
       newItems.push(new OrderItem(product, 0))
