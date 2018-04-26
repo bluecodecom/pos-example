@@ -73,9 +73,12 @@ function OrderLine(props) {
 function OrderItemsPanel(props) {
   return <div className='order-items-panel'>{
     props.orderItems.map(orderItem => 
-      <OrderLine name={ 
-          (orderItem.quantity > 1 ? orderItem.quantity + ' ' + orderItem.product.pluralName : orderItem.product.name) 
-        } price={ formatNumber(orderItem.getPrice()) }>
+      <OrderLine 
+        key={ orderItem.product.name }
+        name={ (orderItem.quantity > 1 
+          ? orderItem.quantity + ' ' + orderItem.product.pluralName 
+          : orderItem.product.name) } 
+        price={ formatNumber(orderItem.getPrice()) }>
       </OrderLine>)
   }</div>
 }
@@ -97,11 +100,17 @@ function OrderTotalPanel(props) {
  * Button bar showing buttons for the payment methods.
  * @param {Object} props
  * @param {() => void} props.onPayment
+ * @param {boolean} props.isPayEnabled
  */
 function PaymentPanel(props) {
   return <div className='payment-panel'>
-    <Button type='flat'>Cash</Button>
-    <Button type='inverse' onClick={ props.onPayment }>Blue Code</Button>
+    <Button 
+      type='flat'
+      disabled={ !props.isPayEnabled }>Cash</Button>
+    <Button 
+      type='inverse' 
+      disabled={ !props.isPayEnabled } 
+      onClick={ props.onPayment }>Blue Code</Button>
   </div>
 }
 
@@ -111,6 +120,7 @@ function PaymentPanel(props) {
  * @param {Order} props.order
  * @param {() => void} props.onClear
  * @param {() => void} props.onPayment
+ * @param {boolean} props.isPayEnabled
  */
 export function OrderCard(props) {
   return (
@@ -125,6 +135,7 @@ export function OrderCard(props) {
         order={ props.order }/>
 
       <PaymentPanel 
+        isPayEnabled={ props.isPayEnabled }
         onPayment={ props.onPayment }/>
     </Card>
   )

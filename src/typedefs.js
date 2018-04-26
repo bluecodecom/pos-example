@@ -7,31 +7,15 @@
 
  @typedef statusResponse
  @type {Object}
-
- TODO should not have both payment and status
- @property {string} result
- @property {Object} status
- @property {Object} payment
- @property {string} payment.acquirerTxId
- @property {string} payment.code
- @property {string} payment.state
-
- @typedef paymentResponse
- @type {Object}
-
- TODO should not have both result and status
  @property {string} result
  @property {Object} status
  @property {string} status.merchantTxId
+ @property {number} status.checkStatusIn
+ @property {number} status.ttl
 
  @property {Object} payment
  @property {string} payment.acquirerTxId
- @property {number} payment.consumerTipAmount
- @property {number} payment.requestedAmount
- @property {number} payment.totalAmount
- @property {string} payment.merchantTxId
- @property {string} payment.scheme
- @property {string} payment.slipNote
+ @property {string} payment.code
  @property {string} payment.state
 
  @typedef paymentOptions

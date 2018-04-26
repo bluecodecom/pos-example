@@ -10,7 +10,7 @@ const MAX_RETRIES = 3
 export const STATUS_CONNECTING = 'connecting'
 export const STATUS_PROCESSING = 'processing'
 export const STATUS_APPROVED = 'accepted'
-export const STATUS_REJECTED = 'rejected'
+export const STATUS_DECLINED = 'declined'
 export const STATUS_ERROR = 'error'
 export const STATUS_CANCELED = 'canceled'
 
@@ -61,6 +61,24 @@ function mapKeys(object, mapFunction) {
 
         return newObject 
       }, {})
+  }
+}
+
+/**
+ * Thrown when the server returns a non 200 status code but does return a JSON response.
+ * (There are unusual internal error cases when the server fails to return JSON; in these
+ * cases, a normal Error is thrown)
+ */
+class ErrorResponse extends Error {
+  /**
+   * @param {{}} response The response the server sent.
+   * @param {number} retryIndex
+   */
+  constructor(message, response, retryIndex) {
+    super(message)
+
+    this.response = response
+    this.retryIndex = retryIndex
   }
 }
 
@@ -188,7 +206,18 @@ export class BlueCodeClient {
             }
           }
           else {
-            reject(new Error('Request to ' + endpoint + ' resulted in status ' + xhr.status))
+            // test if there was a JSON response
+            if (xhr.response && xhr.response.result) {
+              let response = mapKeys(xhr.response, snakeCaseToCamelCase)
+
+              reject(new ErrorResponse(
+                'Error response ' + response.errorCode,
+                response, 
+                retryIndex))
+            }
+            else {
+              reject(new Error('Request to ' + endpoint + ' resulted in status ' + xhr.status))
+            }
           }
         }
       }
@@ -229,12 +258,40 @@ export class BlueCodeClient {
   /**
    * @param {paymentOptions} paymentOptions 
    * @param {progress} [progress]
-   * @return {Promise<paymentResponse>}
+   * @return {Promise<statusResponse>}
    */
   async payAndWaitForProcessing(paymentOptions, progress) {
     progress = progress || NULL_PROGRESS
 
-    let response = await this.call('/payment', paymentOptions, progress)
+    let response
+    
+    try {
+      response = await this.call('/payment', paymentOptions, progress)
+    }
+    catch (e) {
+      // we will receive this error if the first transaction was in fact processed, 
+      // despite the client receiving a timeout. we now know the transaction was in
+      // fact successful.
+      if (e.retryIndex > 0 && e.response && e.response.errorCode == 'MERCHANT_TX_ID_NOT_UNIQUE') {
+        progress.onProgress('Transaction ID not unique. Seems like the first attempt got through.')
+
+        return await this.status(paymentOptions.merchantTxId, progress)
+      }
+      else if (e.response && e.response.payment) {
+        /** @type {statusResponse} */
+        let payment = e.response.payment
+        
+        // throw a nicer error message
+        throw new ErrorResponse(
+          'Payment state ' + payment.state + ', code ' + payment.code,
+          e.response,
+          e.retryIndex
+        )
+      }
+      else {
+        throw e
+      }
+    }
   
     let startTime = new Date().getTime()
 
@@ -264,7 +321,7 @@ export class BlueCodeClient {
   /**
    * @param {paymentOptions} paymentOptions 
    * @param {progress} [progress]
-   * @return {Promise<paymentResponse>}
+   * @return {Promise<statusResponse>}
    */
   async pay(paymentOptions, progress) {
     progress = progress || NULL_PROGRESS
@@ -285,7 +342,7 @@ export class BlueCodeClient {
     requireAttribute(paymentOptions, 'branchExtId')
     requireAttribute(paymentOptions, 'requestedAmount')
 
-    /** @type {paymentResponse} */
+    /** @type {statusResponse} */
     let response
 
     try {
@@ -314,7 +371,7 @@ export class BlueCodeClient {
 
     let isApproved = response.payment.state === 'APPROVED'
 
-    progress.onProgress('Payment status: ' + response.payment.state, isApproved ? STATUS_APPROVED : STATUS_REJECTED)
+    progress.onProgress('Payment status: ' + response.payment.state, isApproved ? STATUS_APPROVED : STATUS_DECLINED)
 
     if (!isApproved) {
       throw new Error('Payment failed: ' + response.payment.state + ', code ' + response.payment.code)

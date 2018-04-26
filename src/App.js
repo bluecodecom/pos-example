@@ -58,6 +58,7 @@ class App extends Component {
 
         <OrderCard 
           order={ this.state.order }
+          isPayEnabled={ !this.state.order.isEmpty() }
           onClear={ () => 
             this.setState({ order: new Order() }) }
           onPayment= { () => 
@@ -129,7 +130,7 @@ class App extends Component {
         {
           barcode: barcode,
           branchExtId: 'test',
-          requestedAmount: 100
+          requestedAmount: Math.round(this.state.order.getTotal() * 100)
         },
         progress
       )

@@ -19,11 +19,12 @@ export function ModalOverlay(props) {
  * A material design-style button.
  * @param {Object} props
  * @param {string} props.type Either 'flat' or 'inverse' (for white-on-dark button)
+ * @param {boolean} props.disabled
  * @param {() => void} props.onClick
  */
 export function Button(props) {
   return <button 
-    className={ props.type } 
+    className={ props.type + (props.disabled ? ' disabled' : '') } 
     onClick={ props.onClick }>{ 
       props.children 
     }</button>

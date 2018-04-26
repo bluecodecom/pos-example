@@ -57,6 +57,10 @@ export class Order {
     return new Order(newItems)
   }
 
+  isEmpty() {
+    return !this.orderItems.length
+  }
+
   getTotal() {
     return this.getSubtotal() + this.getVat()
   }
