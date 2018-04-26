@@ -7,6 +7,30 @@ const DEFAULT_TIMEOUT_MS = 10000
 const BACKOFF_TIME_MS = 2000
 const MAX_RETRIES = 3
 
+export const STATUS_CONNECTING = 'connecting'
+export const STATUS_PROCESSING = 'processing'
+export const STATUS_APPROVED = 'accepted'
+export const STATUS_REJECTED = 'rejected'
+export const STATUS_ERROR = 'error'
+export const STATUS_CANCELED = 'canceled'
+
+/** 
+  * @typedef { (message: string, [status]: string) => void } logger
+  * 
+  * @typedef { Object } progress
+  * @property { logger } onProgress
+  * @property { (() => Promise) => void } onCancellable
+  * 
+  * @type { logger }
+  */
+const NULL_LOGGER = (message, status) => {}
+
+/** @type {progress} */
+const NULL_PROGRESS = {
+  onProgress: NULL_LOGGER,
+  onCancellable: (cancel) => {}
+}
+
 function randomString() {
   let A = 'a'.charCodeAt(0)
 
@@ -40,8 +64,24 @@ function mapKeys(object, mapFunction) {
   }
 }
 
-function wait(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms))
+class CanceledError extends Error {
+  constructor() {
+    super('Canceled')
+
+    this.wasCanceled = true
+  }
+}
+
+/**
+ * @param {number} ms 
+ * @param {progress} progress 
+ */
+function wait(ms, progress) {
+  return new Promise((resolve, reject) => {
+    progress.onCancellable(() => reject(new CanceledError()))
+
+    setTimeout(resolve, ms)
+  })
 }
 
 function camelCaseToSnakeCase(camelCaseString) {
@@ -85,25 +125,34 @@ export class BlueCodeClient {
 
   /**
    * @param {string} endpoint Should start with a slash.
+   * @param {progress} progress
+   * @param {number} retryIndex
    * @param {*} payload 
    */
-  call(endpoint, payload, timeoutMs, retryIndex) {
+  call(endpoint, payload, progress, retryIndex) {
     retryIndex = retryIndex || 0
-    timeoutMs = timeoutMs || DEFAULT_TIMEOUT_MS
+    progress = progress || NULL_PROGRESS
+
+    let timeoutMs = DEFAULT_TIMEOUT_MS
+
+    progress.onProgress('Calling ' + endpoint + '...')
 
     return new Promise((resolve, reject) => {
       let retry = async () => {
         if (retryIndex < MAX_RETRIES) {
-          await wait(BACKOFF_TIME_MS)
+          await wait(BACKOFF_TIME_MS, progress)
 
-          console.warn('Timeout calling ' + endpoint + '. Retrying...')
+          progress.onProgress('Timeout calling ' + endpoint + '. Retrying...')
 
-          this.call(endpoint, payload, timeoutMs, retryIndex+1)
-            .then(resolve)
-            .catch(reject)
+          try {
+            resolve(await this.call(endpoint, payload, progress, retryIndex+1))
+          }
+          catch (e) {
+            reject(e)
+          }
         }
         else {
-          reject('Request to ' + endpoint + ' timed out.')
+          reject(new Error('Request to ' + endpoint + ' timed out.'))
         }
       }
 
@@ -117,16 +166,29 @@ export class BlueCodeClient {
       xhr.setRequestHeader('Content-type', 'application/json')
       xhr.setRequestHeader('Authorization', 'Basic ' + window.btoa(this.username + ':' + this.password))
 
+      let didCancel = false
+
+      progress.onCancellable(() => {
+        didCancel = true
+
+        xhr.abort()
+      })
+
       xhr.onreadystatechange = () => {
         if (xhr.readyState === XMLHttpRequest.DONE) {
           if (xhr.status >= 200 && xhr.status < 300) {
             resolve(xhr.response)
           }
           else if (xhr.status === 0) {
-            retry()
+            if (didCancel) {
+              reject(new CanceledError())
+            }
+            else {
+              retry()
+            }
           }
           else {
-            reject('Request to ' + endpoint + ' resulted in status ' + xhr.status)
+            reject(new Error('Request to ' + endpoint + ' resulted in status ' + xhr.status))
           }
         }
       }
@@ -147,23 +209,32 @@ export class BlueCodeClient {
   /**
    * @async
    * @param {string} merchantTxId 
+   * @param {progress} [progress]
    * @return {statusResponse} 
   */
-  status(merchantTxId) {
-    return this.call('/status', { merchantTxId })
+  status(merchantTxId, progress) {
+    return this.call('/status', { merchantTxId }, progress)
   }
 
   /**
    * @async
    * @param {string} merchantTxId 
+   * @param {progress} [progress]
    * @return {statusResponse} 
   */
-  cancel(merchantTxId) {
-    return this.call('/cancel', { merchantTxId })
+  cancel(merchantTxId, progress) {
+    return this.call('/cancel', { merchantTxId }, progress)
   }
 
-  async payAndWaitForProcessing(paymentOptions) {
-    let response = await this.call('/payment', paymentOptions)
+  /**
+   * @param {paymentOptions} paymentOptions 
+   * @param {progress} [progress]
+   * @return {Promise<paymentResponse>}
+   */
+  async payAndWaitForProcessing(paymentOptions, progress) {
+    progress = progress || NULL_PROGRESS
+
+    let response = await this.call('/payment', paymentOptions, progress)
   
     let startTime = new Date().getTime()
 
@@ -177,10 +248,14 @@ export class BlueCodeClient {
         throw new Error('Payment timed out.')
       }
 
-      console.log('Blue Code returned PROCESSING. Waiting...')
-      await wait(paymentStatus.checkStatusIn)
+      progress.onProgress('Got response PROCESSING. Will call status endpoint again in ' + 
+        Math.round(paymentStatus.checkStatusIn / 1000) + 's...', STATUS_PROCESSING)
 
-      response = await this.status(paymentOptions.merchantTxId)
+      await wait(paymentStatus.checkStatusIn, progress)
+
+      progress.onProgress('Calling status endpoint...', STATUS_PROCESSING)
+
+      response = await this.status(paymentOptions.merchantTxId, progress)
     }
 
     return response
@@ -188,9 +263,12 @@ export class BlueCodeClient {
 
   /**
    * @param {paymentOptions} paymentOptions 
+   * @param {progress} [progress]
    * @return {Promise<paymentResponse>}
    */
-  async pay(paymentOptions) {
+  async pay(paymentOptions, progress) {
+    progress = progress || NULL_PROGRESS
+
     /** @type {paymentOptions} */
     let defaults = {
       scheme: 'AUTO',
@@ -198,6 +276,8 @@ export class BlueCodeClient {
       merchantTxId: generateMerchantTxId(),
       slipDateTime: dateToString(new Date())
     }
+
+    progress.onProgress(null, STATUS_CONNECTING)
 
     paymentOptions = { ...defaults, ...paymentOptions }
 
@@ -209,22 +289,34 @@ export class BlueCodeClient {
     let response
 
     try {
-      response = await this.payAndWaitForProcessing(paymentOptions)
+      response = await this.payAndWaitForProcessing(paymentOptions, progress)
+  
+      if (!response.payment) {
+        throw new Error('Unexpected response to payment call.')
+      }
     }
     catch (e) {
+      if (e.wasCanceled) {
+        progress.onProgress('Canceled.', STATUS_CANCELED)        
+      }
+      else {
+        progress.onProgress('Fatal error: ' + e.message, STATUS_ERROR)
+      }
+
       console.error(e)
 
-      this.cancel(paymentOptions.merchantTxId)
+      this.cancel(paymentOptions.merchantTxId, progress)
+      .then(() => progress.onProgress('Cancel successful.', STATUS_CANCELED))
       .catch(e => console.error('Unable to cancel payment ' + paymentOptions.merchantTxId + ': ' + e.message, e))
 
       throw e
     }
 
-    if (!response.payment) {
-      throw new Error('Unexpected response to payment call.')
-    }
+    let isApproved = response.payment.state === 'APPROVED'
 
-    if (response.payment.state !== 'APPROVED') {
+    progress.onProgress('Payment status: ' + response.payment.state, isApproved ? STATUS_APPROVED : STATUS_REJECTED)
+
+    if (!isApproved) {
       throw new Error('Payment failed: ' + response.payment.state + ', code ' + response.payment.code)
     }
 

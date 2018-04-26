@@ -41,12 +41,12 @@
  @property {string} currency
  @property {string} merchantTxId
  @property {number} requestedAmount
- @property {number} discountAmount
- @property {number} tipAmount
- @property {string} terminal
- @property {string} slip
- @property {string} operator
- @property {string} tippingMode
- @property {string} scheme
- @property {string} slipDateTime
+ @property {number} [discountAmount]
+ @property {number} [tipAmount]
+ @property {string} [terminal]
+ @property {string} [slip]
+ @property {string} [operator]
+ @property {string} [tippingMode]
+ @property {string} [scheme]
+ @property {string} [slipDateTime]
 */

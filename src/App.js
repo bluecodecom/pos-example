@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import './App.css'
 import { Order } from './model'
 import { OrderCard, ProductSelectionCard } from './ordering-components'
-import { PaymentDialog } from './payment-components'
+import { PaymentDialog, StatusDialog } from './payment-components'
 import { ModalOverlay } from './util-components'
 import { BlueCodeClient } from './BlueCodeClient'
 
@@ -15,13 +15,22 @@ const MAGIC_PROCESS_FOR_15S = '98802222999900314000'
 const BASE_URL_PRODUCTION = 'https://merchant-api.bluecode.com/v4'
 const BASE_URL_SANDBOX = 'https://merchant-api.bluecode.biz/v4'
 
+/** 
+ @typedef { Object } paymentStatus 
+ @property { string[] } logEntries
+ @property { string } status 
+ @property { () => Promise } cancel
+ */
+
 class App extends Component {
   constructor() {
     super()
 
     this.state = {
       order: new Order(),
-      isPaymentDialogOpen: false
+      isPaymentDialogOpen: false,
+      // if present, a payment is in progress
+      paymentStatus: null, 
     }
   }
 
@@ -38,7 +47,10 @@ class App extends Component {
     let closePaymentDialog = () => 
       this.setState({ isPaymentDialogOpen: false })
 
-    return (
+    let closeStatusDialog = () => 
+      this.setState({ paymentStatus: null })
+
+      return (
       <div className='App'>
         <ProductSelectionCard 
           onProductSelect={ (product)=> 
@@ -65,6 +77,22 @@ class App extends Component {
           : 
           [])
         }
+
+        {
+          (this.state.paymentStatus ?
+            <ModalOverlay 
+                onClose={ closeStatusDialog }>
+
+              <StatusDialog
+                logEntries={ this.state.paymentStatus.logEntries }
+                status={ this.state.paymentStatus.status }
+                onCancel={ this.state.paymentStatus.cancel }
+                onClose={ closeStatusDialog } />
+
+            </ModalOverlay>
+          : 
+          [])
+        }
       </div>
     )
   }
@@ -72,15 +100,43 @@ class App extends Component {
   async pay(barcode) {
     let client = new BlueCodeClient(ANDREAS_AUTH[0], ANDREAS_AUTH[1], BASE_URL_SANDBOX)
 
-    let response = await client.pay(
-      {
-        barcode: barcode,
-        branchExtId: 'test',
-        requestedAmount: 100
-      }
-    )
+    let updatePaymentStatus = (callback) => {
+      setTimeout(() => {
+        let paymentStatus = this.state.paymentStatus || { logEntries: [] }
+    
+        this.setState({
+          paymentStatus: callback(paymentStatus)
+        })    
+      })
+    }
 
-    console.log('payment response', response)
+    let progress = {
+      onProgress: (message, status) => 
+        updatePaymentStatus(paymentStatus => ({
+          ...paymentStatus,
+          logEntries: (paymentStatus.logEntries || []).concat(message ? message : []),
+          status: status || paymentStatus.status
+        })),
+      onCancellable: (cancel) => 
+        updatePaymentStatus(paymentStatus => ({
+          ...paymentStatus,
+          cancel
+        }))
+    }
+
+    try {
+      let response = await client.pay(
+        {
+          barcode: barcode,
+          branchExtId: 'test',
+          requestedAmount: 100
+        },
+        progress
+      )
+    }
+    catch (e) {
+      console.error(e)
+    }
   }
 }
 

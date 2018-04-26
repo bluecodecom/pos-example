@@ -2,16 +2,19 @@
 
 $dialogMargin: 2 * $unit;
 
-.magic-barcodes-list {
-  max-height: 14 * $unit;
+.scrollable-panel {
   overflow-y: scroll;
-
+  
   box-shadow: inset 0 1px 2.5px 0px rgba(0,0,0,0.225); 
-
   margin: 2 * $unit (-$dialogMargin);
   padding: 0 $dialogMargin;
   border-top: 1px solid $light-line-color;
   border-bottom: 1px solid $light-line-color;
+}
+
+.magic-barcodes-list {
+  @extend .scrollable-panel;
+  max-height: 14 * $unit;
   
   .barcode {
     margin: $unit;
@@ -34,29 +37,51 @@ $dialogMargin: 2 * $unit;
   }
 }
 
-.payment-dialog {
+.dialog {
   width: 400px;
   background-color: $background-color;
   box-shadow: 0 4px 10px 0px rgba(0,0,0,0.225); 
+
+  .body {
+    padding: $dialogMargin;
+    color: $text-color;
+
+    .button-bar {
+      margin-top: 4 * $unit;
+      display: flex;
+      justify-content: flex-end;
+    }
+  }
+}
+
+.payment-dialog {
+  @extend .dialog;
 
   .title {
     background-color: $inverted-background-color;
   }
 
   .body {
-    padding: $dialogMargin;
-    color: $text-color;
-
     .barcode-label {
       font-weight: 500;
       margin-top: 6 * $unit;
       margin-bottom: 2 * $unit;
     }
+  }
+}
 
-    .button-bar {
-      margin-top: 4 * $unit;
-      display: flex;
-      justify-content: flex-end;
+.status-dialog {
+  @extend .dialog;
+
+  .log-panel {
+    @extend .scrollable-panel;
+
+    
+    min-height: 22 * $unit;
+    max-height: 22 * $unit;
+
+    .entry {
+      margin: $unit;
     }
   }
 }
