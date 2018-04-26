@@ -313,6 +313,15 @@ export class BlueCodeClient {
       progress.onProgress('Calling status endpoint...', STATUS_PROCESSING)
 
       response = await this.status(paymentOptions.merchantTxId, progress)
+
+      let payment = response.payment
+
+      if (response.result != 'PROCESSING' && (!payment || payment.state != 'APPROVED')) {
+        throw new ErrorResponse(
+          'Payment state ' + payment.state + ', code ' + payment.code,
+          response,
+          0)
+      }
     }
 
     return response
@@ -353,28 +362,37 @@ export class BlueCodeClient {
       }
     }
     catch (e) {
+      console.error(e)
+
       if (e.wasCanceled) {
         progress.onProgress('Canceled.', STATUS_CANCELED)        
       }
       else {
         progress.onProgress('Fatal error: ' + e.message, STATUS_ERROR)
+
+        let needsCancel = 
+          !e.response 
+          || !e.response.payment 
+          || e.response.payment.code == 'SYSTEM_FAILURE'
+
+        if (needsCancel) {
+          this.cancel(paymentOptions.merchantTxId, progress)
+          .then(() => progress.onProgress('Cancel successful.', STATUS_CANCELED))
+          .catch(e => console.error('Unable to cancel payment ' + paymentOptions.merchantTxId + ': ' + e.message, e))
+        }
       }
-
-      console.error(e)
-
-      this.cancel(paymentOptions.merchantTxId, progress)
-      .then(() => progress.onProgress('Cancel successful.', STATUS_CANCELED))
-      .catch(e => console.error('Unable to cancel payment ' + paymentOptions.merchantTxId + ': ' + e.message, e))
 
       throw e
     }
 
     let isApproved = response.payment.state === 'APPROVED'
 
-    progress.onProgress('Payment status: ' + response.payment.state, isApproved ? STATUS_APPROVED : STATUS_DECLINED)
+    let message = 'Payment status: ' + response.payment.state + ', code ' + response.payment.code
+
+    progress.onProgress(message, isApproved ? STATUS_APPROVED : STATUS_DECLINED)
 
     if (!isApproved) {
-      throw new Error('Payment failed: ' + response.payment.state + ', code ' + response.payment.code)
+      throw new Error(message)
     }
 
     return response.payment
