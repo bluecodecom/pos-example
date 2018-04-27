@@ -1,4 +1,12 @@
 import './typedefs.js'
+import { 
+  mapKeys,
+  camelCaseToSnakeCase, 
+  snakeCaseToCamelCase, 
+  dateToString, 
+  generateMerchantTxId, 
+  requireAttribute
+} from './client-util.js'
 
 const TIPPING_DISABLED = 'disabled'
 const TIPPING_ENABLED = 'enabled'
@@ -9,7 +17,7 @@ const MAX_RETRIES = 3
 
 export const STATUS_CONNECTING = 'connecting'
 export const STATUS_PROCESSING = 'processing'
-export const STATUS_APPROVED = 'accepted'
+export const STATUS_APPROVED = 'approved'
 export const STATUS_DECLINED = 'declined'
 export const STATUS_ERROR = 'error'
 export const STATUS_CANCELED = 'canceled'
@@ -17,9 +25,17 @@ export const STATUS_CANCELED = 'canceled'
 /** 
   * @typedef { (message: string, [status]: string) => void } logger
   * 
+  * The Progress object can optionally be sent to any endpoint 
+  * to receive status updates during the call and to be able to
+  * cancel the call.
   * @typedef { Object } progress
-  * @property { logger } onProgress
-  * @property { (() => Promise) => void } onCancellable
+  * @property { logger } onProgress - A logger instance that gets 
+  *   called with status updates on the call.
+  * @property { (() => Promise) => void } onCancellable -
+  *   A callback that will receive a cancel method. Call the cancel
+  *   method to abort the transaction. Note that the method will
+  *   be called multiple times during the transaction; always call
+  *   cancel on the latest instance.
   * 
   * @type { logger }
   */
@@ -29,39 +45,6 @@ const NULL_LOGGER = (message, status) => {}
 const NULL_PROGRESS = {
   onProgress: NULL_LOGGER,
   onCancellable: (cancel) => {}
-}
-
-function randomString() {
-  let A = 'a'.charCodeAt(0)
-
-  return '            '
-    .split('')
-    .map(() => String.fromCharCode(Math.round(Math.random()*25) + A))
-    .join('')
-}
-
-function generateMerchantTxId() {
-  return randomString()
-}
-
-function mapKeys(object, mapFunction) {
-  if (object == null) {
-    return object
-  }
-  else {
-    return Object.keys(object)
-      .reduce((newObject, key) => {
-        let value = object[key]
-
-        if (typeof value === 'object') {
-          value = mapKeys(value, mapFunction)
-        }
-
-        newObject[mapFunction(key)] = value
-
-        return newObject 
-      }, {})
-  }
 }
 
 /**
@@ -82,6 +65,9 @@ class ErrorResponse extends Error {
   }
 }
 
+/**
+ * Thrown when a transaction was cancelled using the {@link progress} object.
+ */
 class CanceledError extends Error {
   constructor() {
     super('Canceled')
@@ -91,39 +77,16 @@ class CanceledError extends Error {
 }
 
 /**
+ * Waits for a specified number of milliseconds.
  * @param {number} ms 
  * @param {progress} progress 
  */
-function wait(ms, progress) {
+export function wait(ms, progress) {
   return new Promise((resolve, reject) => {
     progress.onCancellable(() => reject(new CanceledError()))
 
     setTimeout(resolve, ms)
   })
-}
-
-function camelCaseToSnakeCase(camelCaseString) {
-  return camelCaseString
-    .replace(/([A-Z])/g, (x, upperCaseChar) => '_' + upperCaseChar.toLowerCase())
-}
-
-function snakeCaseToCamelCase(snakeCaseString) {
-  return snakeCaseString
-    .replace(/_([a-z])/g, (x, lowerCaseChar) => lowerCaseChar.toUpperCase())
-}
-
-function dateToString(date) {
-  let dateWithMillis = date.toISOString()
-  
-  let dateWithoutMillis = dateWithMillis.slice(0, - '.000Z'.length) + 'Z'
-
-  return dateWithoutMillis
-}
-
-function requireAttribute(json, attribute) {
-  if (json[attribute] === null || json[attribute] === undefined) {
-    throw new Error('Missing attribute "' + attribute + '" in ' + JSON.stringify(json))
-  }
 }
 
 export class BlueCodeClient {
@@ -142,10 +105,11 @@ export class BlueCodeClient {
   }
 
   /**
+   * Perform an API call.
    * @param {string} endpoint Should start with a slash.
    * @param {progress} progress
-   * @param {number} retryIndex
-   * @param {*} payload 
+   * @param {*} payload POST payload. Will be converted into JSON (including converting camel case to snake case)
+   * @param {number} [retryIndex] Unset for the first call. 1 on the first retry etc.
    */
   call(endpoint, payload, progress, retryIndex) {
     retryIndex = retryIndex || 0
@@ -174,6 +138,8 @@ export class BlueCodeClient {
         }
       }
 
+      // we're using XHR rather than fetch() because fetch 
+      // does not support aborting the request
       let xhr = new XMLHttpRequest()
   
       xhr.open('POST', this.baseUrl + endpoint, true)
@@ -186,6 +152,8 @@ export class BlueCodeClient {
 
       let didCancel = false
 
+      // let the progress object know how to cancel the current request.
+      // if cancelled, we will throw a CancelError which aborts everything.
       progress.onCancellable(() => {
         didCancel = true
 
@@ -198,6 +166,7 @@ export class BlueCodeClient {
             resolve(xhr.response)
           }
           else if (xhr.status === 0) {
+            // status 0 means either a timeout, offline or a cancel.
             if (didCancel) {
               reject(new CanceledError())
             }
@@ -206,10 +175,13 @@ export class BlueCodeClient {
             }
           }
           else {
-            // test if there was a JSON response
+            // test if there was a JSON error response from the server
+            // (there might not be on 500 errors)
             if (xhr.response && xhr.response.result) {
               let response = mapKeys(xhr.response, snakeCaseToCamelCase)
 
+              // if there was, include it in the exception so clients get
+              // more information
               reject(new ErrorResponse(
                 'Error response ' + response.errorCode,
                 response, 
@@ -236,6 +208,7 @@ export class BlueCodeClient {
   }
 
   /**
+   * Get the payment status on a transaction.
    * @async
    * @param {string} merchantTxId 
    * @param {progress} [progress]
@@ -246,6 +219,7 @@ export class BlueCodeClient {
   }
 
   /**
+   * Cancel a transaction.
    * @async
    * @param {string} merchantTxId 
    * @param {progress} [progress]
@@ -256,6 +230,7 @@ export class BlueCodeClient {
   }
 
   /**
+   * Utility for the payment call. Handles retries but no other error handling.
    * @param {paymentOptions} paymentOptions 
    * @param {progress} [progress]
    * @return {Promise<statusResponse>}
@@ -277,11 +252,12 @@ export class BlueCodeClient {
 
         return await this.status(paymentOptions.merchantTxId, progress)
       }
+      // something else went wrong. if the server passed us information on the payment
+      // (i.e. it was a rejection), use it to throw a nicer error message
       else if (e.response && e.response.payment) {
         /** @type {statusResponse} */
         let payment = e.response.payment
         
-        // throw a nicer error message
         throw new ErrorResponse(
           'Payment state ' + payment.state + ', code ' + payment.code,
           e.response,
@@ -328,6 +304,7 @@ export class BlueCodeClient {
   }
 
   /**
+   * Perform a payment.
    * @param {paymentOptions} paymentOptions 
    * @param {progress} [progress]
    * @return {Promise<statusResponse>}
