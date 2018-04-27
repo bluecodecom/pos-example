@@ -85,3 +85,33 @@ $dialogMargin: 2 * $unit;
     }
   }
 }
+
+.spinner {
+  flex-grow: 0.2;
+  width: 100%;
+
+  &.status {
+    // this makes the status box have aspect ratio 10:1 which is the same as the svg. 
+    padding-bottom: 10%;
+    position: relative;
+
+    > div {
+      position: absolute;
+      top: 0; 
+      bottom: 0; 
+      left: 0; 
+      right: 0;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+  }
+
+  .animate {
+    x: 0;
+    transition: x .5s cubic-bezier(0.895, 0.03, 0.685, 0.22);
+  }
+}

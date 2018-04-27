@@ -377,7 +377,7 @@ export class BlueCodeClient {
 
         if (needsCancel) {
           this.cancel(paymentOptions.merchantTxId, progress)
-          .then(() => progress.onProgress('Cancel successful.', STATUS_CANCELED))
+          .then(() => progress.onProgress('Cancel successful.'))
           .catch(e => console.error('Unable to cancel payment ' + paymentOptions.merchantTxId + ': ' + e.message, e))
         }
       }
@@ -387,7 +387,8 @@ export class BlueCodeClient {
 
     let isApproved = response.payment.state === 'APPROVED'
 
-    let message = 'Payment status: ' + response.payment.state + ', code ' + response.payment.code
+    let message = 'Payment status: ' + response.payment.state + 
+      (response.payment.code ? ', code ' + response.payment.code : '')
 
     progress.onProgress(message, isApproved ? STATUS_APPROVED : STATUS_DECLINED)
 

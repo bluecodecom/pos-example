@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import './App.css'
 import { Order } from './model'
 import { OrderCard, ProductSelectionCard } from './ordering-components'
-import { PaymentDialog, StatusDialog } from './payment-components'
+import { PaymentDialog, StatusDialog, Spinner } from './payment-components'
 import { ModalOverlay } from './util-components'
 import { BlueCodeClient } from './BlueCodeClient'
 

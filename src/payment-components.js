@@ -134,6 +134,7 @@ export class LogPanel extends Component {
  */
 export function StatusDialog(props) {
   return <Card title='Payment Status' className='status-dialog'>
+    <Spinner status={ (props.status == STATUS_CONNECTING || props.status == STATUS_PROCESSING) ? '' : props.status } />
     <LogPanel logEntries={ props.logEntries } />
     <div className='button-bar'>
       {
@@ -152,4 +153,117 @@ export function StatusDialog(props) {
       }
     </div>
   </Card>
+}
+
+/**
+ * Spinner showing an animated bar code unless the `status` property is set, in which case it shows as status.
+ */
+export class Spinner extends Component {
+  // the sizes of the bars in the animated bar code, normalized to a scale of 0..1
+  BARS = [
+    { x: 0, w: 30 },
+    { x: 55, w: 45 },
+    { x: 123, w: 27 },
+    { x: 191, w: 30 },
+    { x: 258, w: 18 },
+    { x: 310, w: 30 },
+    { x: 382, w: 27 },
+    { x: 434, w: 45 },
+    { x: 502, w: 30 }
+  ]
+  .map(rect => ({
+    x: (rect.x / 532), w: (rect.w / 532)
+  }))
+  
+  PAUSE_BETWEEN_BARS = 300
+  PAUSE_BETWEEN_ITERATIONS = 500
+  ANIMATION_DURATION = 500
+  BARCODE_WIDTH = 200
+  CANVAS_WIDTH = 1000
+  CANVAS_HEIGHT = this.CANVAS_WIDTH/10
+
+  constructor() {
+    super()
+
+    this.state = {
+      isFallingFromRight: false,
+      currentlyFalling: 0,
+      iteration: 1
+    }
+  }
+
+  startFalling() {
+    if (this.props.status) {
+      return
+    }
+    
+    for (let idx = 0; idx < this.BARS.length; idx++) {
+      let i = idx
+
+      setTimeout(() => {
+        this.setState({ 
+          currentlyFalling: i+1
+        })
+      }, i * this.PAUSE_BETWEEN_BARS)
+    }
+  }
+
+  fallFromOtherSide() {
+    this.setState({ 
+      isFallingFromRight: !this.state.isFallingFromRight,
+      currentlyFalling: 0,
+      iteration: this.state.iteration+1,
+      className: null
+    })
+    
+    setTimeout(
+      () => this.startFalling(), 
+      this.PAUSE_BETWEEN_ITERATIONS)
+  }
+
+  componentWillUnmount() {
+    clearInterval(this.timer)
+  }
+
+  componentDidMount() {
+    this.startFalling()
+
+    this.timer = setInterval(
+      () => this.fallFromOtherSide(), 
+      this.PAUSE_BETWEEN_ITERATIONS 
+      + this.BARS.length * this.PAUSE_BETWEEN_BARS 
+      + this.ANIMATION_DURATION)
+  }
+
+  render() {
+    if (this.props.status) {
+      return <div className='spinner status'>
+        <div>{ this.props.status }</div>
+      </div>
+    }
+    else {
+      let state = this.state
+      let canvasOffsetX = (state.className == 'right' ? this.CANVAS_WIDTH : 0)
+      let barOffsetX = (state.isFallingFromRight ? 500 - this.BARCODE_WIDTH / 2 : -this.BARCODE_WIDTH)
+
+      return <svg viewBox={ `${ canvasOffsetX } 0 ${this.CANVAS_WIDTH} ${this.CANVAS_HEIGHT}` } className='spinner'>
+      {
+        this.BARS.map((rect, i) =>
+          <svg 
+            x={ rect.x * this.BARCODE_WIDTH + barOffsetX }
+            key={ state.iteration + '' + i } 
+            >
+            <rect 
+              x={ 500 + this.BARCODE_WIDTH / 2 } 
+              y='0' 
+              className={ i < state.currentlyFalling ? 'animate' : '' }
+              width={ rect.w * this.BARCODE_WIDTH } 
+              height={ this.CANVAS_HEIGHT } 
+              fill='#000000' />
+          </svg>
+        )
+      }
+      </svg>
+    }
+  }
 }
