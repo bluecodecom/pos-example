@@ -228,8 +228,34 @@ export class BlueCodeClient {
    * @param {progress} [progress]
    * @return {statusResponse} 
   */
-  cancel(merchantTxId, progress) {
-    return this.call('/cancel', { merchantTxId }, progress)
+ cancel(merchantTxId, progress) {
+  return this.call('/cancel', { merchantTxId }, progress)
+}
+
+  /**
+   * Refund a transaction.
+   * @async
+   * @param {string} acquirerTxId 
+   * @param {number} [refundAmount]
+   * @param {string} [reason]
+   * @param {progress} [progress]
+   * @return {statusResponse} 
+  */
+  async refund(acquirerTxId, refundAmount, reason, progress) {
+    try {
+      await this.call('/refund', { 
+        acquirerTxId, 
+        refundAmount, 
+        reason 
+      }, progress)
+
+      progress.onProgress('Refund successful.', 'SUCCESS')
+    }
+    catch (e) {
+      progress.onProgress('Refund failed: ' + e.response.errorCode, STATUS_ERROR)
+
+      throw e
+    }
   }
 
   /**
@@ -250,7 +276,7 @@ export class BlueCodeClient {
       // we will receive this error if the first transaction was in fact processed, 
       // despite the client receiving a timeout. we now know the transaction was in
       // fact successful.
-      if (e.retryIndex > 0 && e.response && e.response.errorCode == 'MERCHANT_TX_ID_NOT_UNIQUE') {
+      if (e.retryIndex > 0 && e.response && e.response.errorCode === 'MERCHANT_TX_ID_NOT_UNIQUE') {
         progress.onProgress('Transaction ID not unique. Seems like the first attempt got through.')
 
         return await this.status(paymentOptions.merchantTxId, progress)
@@ -295,7 +321,7 @@ export class BlueCodeClient {
 
       let payment = response.payment
 
-      if (response.result != 'PROCESSING' && (!payment || payment.state != 'APPROVED')) {
+      if (response.result !== 'PROCESSING' && (!payment || payment.state !== 'APPROVED')) {
         throw new ErrorResponse(
           'Payment state ' + payment.state + ', code ' + payment.code,
           response,
@@ -344,22 +370,24 @@ export class BlueCodeClient {
     catch (e) {
       console.error(e)
 
+      let needsCancel = true
+
       if (e.wasCanceled) {
         progress.onProgress('Canceled.', STATUS_CANCELED)        
       }
       else {
         progress.onProgress('Fatal error: ' + e.message, STATUS_ERROR)
 
-        let needsCancel = 
+        needsCancel = 
           !e.response 
           || !e.response.payment 
-          || e.response.payment.code == 'SYSTEM_FAILURE'
+          || e.response.payment.code === 'SYSTEM_FAILURE'
+      }
 
-        if (needsCancel) {
-          this.cancel(paymentOptions.merchantTxId, progress)
-          .then(() => progress.onProgress('Cancel successful.'))
-          .catch(e => console.error('Unable to cancel payment ' + paymentOptions.merchantTxId + ': ' + e.message, e))
-        }
+      if (needsCancel) {
+        this.cancel(paymentOptions.merchantTxId, progress)
+        .then(() => progress.onProgress('Cancel successful.'))
+        .catch(e => console.error('Unable to cancel payment ' + paymentOptions.merchantTxId + ': ' + e.message, e))
       }
 
       throw e

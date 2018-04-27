@@ -1,0 +1,26 @@
+@import 'variables.scss';
+@import 'util-components.scss';
+
+.refund-dialog {
+  @extend .dialog;
+  width: 500px;
+
+  .title {
+    background-color: $inverted-background-color;
+  }
+
+  .error {
+    font-weight: 500;    
+    margin-bottom: $unit;
+  }
+
+  .field {
+    margin-bottom: $unit;
+
+    .text-input .inner {
+      input, .bar {
+        width: 350px;
+      }
+    }
+  }
+}

@@ -38,7 +38,7 @@ function MagicBarcodesList(props) {
             key={ magicBarcode.barcode } 
             onClick={() => props.onSelect(magicBarcode) }>
           <div className='logo'>
-            <img src='img/barcode.png'/>
+            <img src='img/barcode.png' alt=''/>
           </div>
           <div className='name'>{
             magicBarcode.name
@@ -133,12 +133,16 @@ export class LogPanel extends Component {
  * @param { () => void } props.onCancel
  */
 export function StatusDialog(props) {
-  return <Card title='Payment Status' className='status-dialog'>
-    <Spinner status={ (props.status == STATUS_CONNECTING || props.status == STATUS_PROCESSING) ? '' : props.status } />
+  let isStillWorking = 
+    props.status === STATUS_CONNECTING 
+    || props.status === STATUS_PROCESSING
+
+  return <Card title={ props.title } className='status-dialog'>
+    <Spinner status={ isStillWorking ? '' : props.status } />
     <LogPanel logEntries={ props.logEntries } />
     <div className='button-bar'>
       {
-        props.status == STATUS_CONNECTING || props.status == STATUS_PROCESSING ?
+        isStillWorking ?
           <Button
               type='flat' 
               onClick={ props.onCancel }>
@@ -243,7 +247,7 @@ export class Spinner extends Component {
     }
     else {
       let state = this.state
-      let canvasOffsetX = (state.className == 'right' ? this.CANVAS_WIDTH : 0)
+      let canvasOffsetX = (state.className === 'right' ? this.CANVAS_WIDTH : 0)
       let barOffsetX = (state.isFallingFromRight ? 500 - this.BARCODE_WIDTH / 2 : -this.BARCODE_WIDTH)
 
       return <svg viewBox={ `${ canvasOffsetX } 0 ${this.CANVAS_WIDTH} ${this.CANVAS_HEIGHT}` } className='spinner'>

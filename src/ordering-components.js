@@ -108,11 +108,14 @@ function OrderTotalPanel(props) {
  * @param {boolean} props.isPayEnabled
  */
 function PaymentPanel(props) {
+  let cash = () => alert('Sorry, this POS only accepts Blue Code.')
+
   return <div className='payment-panel'>
     <Button 
       type='flat'
       disabled={ !props.isPayEnabled }
-      onClick={ () => alert('Sorry, this POS only accepts Blue Code.')}>Cash</Button>
+      onClick={ cash }>Cash</Button>
+
     <Button 
       type='inverse' 
       disabled={ !props.isPayEnabled } 
@@ -134,6 +137,7 @@ export function OrderCard(props) {
         className='order-card' 
         actions={ [ 'ic_clear_white_24px' ] } 
         onAction={ props.onClear }>
+
       <OrderItemsPanel 
         orderItems={ props.order.orderItems }/>
 
@@ -143,6 +147,7 @@ export function OrderCard(props) {
       <PaymentPanel 
         isPayEnabled={ props.isPayEnabled }
         onPayment={ props.onPayment }/>
+
     </Card>
   )
 }

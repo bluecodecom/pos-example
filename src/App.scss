@@ -13,12 +13,19 @@ body {
 }
 
 .App {
-  display: flex;
   position: relative;
-
   width: 700px;
 
-  > .card {
-    width: 50%;
+  .cards {
+    display: flex;
+
+    > .card {
+      width: 50%;
+    }
   }
+
+  .refund-button {
+    margin-top: 2 * $unit;
+  }
+
 }

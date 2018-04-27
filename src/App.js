@@ -2,14 +2,11 @@ import React, { Component } from 'react'
 import './App.css'
 import { Order } from './model'
 import { OrderCard, ProductSelectionCard } from './ordering-components'
-import { PaymentDialog, StatusDialog, Spinner } from './payment-components'
-import { ModalOverlay } from './util-components'
+import { PaymentDialog, StatusDialog } from './payment-components'
+import { ModalOverlay, Button } from './util-components'
 import { BlueCodeClient, BASE_URL_SANDBOX } from './BlueCodeClient'
 import { CredentialsDialog, getCredentials } from './credentials-components';
-
-const MAGIC_SUCCESS        = '98802222100100123456'
-const MAGIC_PROCESS_FOR_5S = '98802222999900305000'
-const MAGIC_PROCESS_FOR_15S = '98802222999900314000'
+import { RefundDialog } from './refund-components';
 
 /** 
  @typedef { Object } paymentStatus 
@@ -23,16 +20,19 @@ class App extends Component {
     super()
 
     /**
+     * @property { string } paymentStatus.operationName
      * @property { string[] } paymentStatus.logEntries
      * @property { () => void } paymentStatus.cancel
      */
     this.state = {
       order: new Order(),
       isPaymentDialogOpen: false,
+      isRefundDialogOpen: false,
       isCredentialsDialogOpen: !getCredentials(),
       // if present, a payment is in progress 
       // and we show the payment status dialog
       paymentStatus: null, 
+      lastTransactionAcquirerTxId: null
     }
   }
 
@@ -69,13 +69,16 @@ class App extends Component {
     let close = () => 
       this.setState({ paymentStatus: null })
 
+    let paymentStatus = this.state.paymentStatus
+
     return <ModalOverlay 
       onClose={ close }>
 
       <StatusDialog
-        logEntries={ this.state.paymentStatus.logEntries }
-        status={ this.state.paymentStatus.status }
-        onCancel={ this.state.paymentStatus.cancel }
+        title={ paymentStatus.operationName + ' Status'}
+        logEntries={ paymentStatus.logEntries }
+        status={ paymentStatus.status }
+        onCancel={ paymentStatus.cancel }
         onClose={ close } />
 
     </ModalOverlay>
@@ -99,6 +102,32 @@ class App extends Component {
     </ModalOverlay>
   }
 
+  renderRefundDialog() {
+    let close = () => 
+      this.setState({ 
+        isRefundDialogOpen: null 
+      })
+
+    return <ModalOverlay 
+      onClose={ close }>
+
+      <RefundDialog
+        acquirerTxId={ this.state.lastTransactionAcquirerTxId }
+        onRefund={ 
+          (acquirerTransactionId, amount, reason) => {
+            this.setState({ 
+              isRefundDialogOpen: false
+            })
+
+            this.refund(acquirerTransactionId, amount, reason) 
+          }
+        }
+        onCancel={ close } 
+      />
+
+    </ModalOverlay>
+  }
+
   render() {
     let openSettings = () => 
       this.setState({ 
@@ -115,52 +144,75 @@ class App extends Component {
         isPaymentDialogOpen: true 
       })
     }
+
+    let refund = () => {
+      this.setState({ 
+        isRefundDialogOpen: true 
+      })
+    }
     
     let selectProduct = (product)=> 
       this.addProductToOrder(product) 
   
     return (
       <div className='App'>
-        <ProductSelectionCard 
-          onOpenSettings={ openSettings }
-          onProductSelect={ selectProduct } />
+        <div className='cards'>
+          <ProductSelectionCard 
+            onOpenSettings={ openSettings }
+            onProductSelect={ selectProduct } />
 
-        <OrderCard 
-          order={ this.state.order }
-          isPayEnabled={ !this.state.order.isEmpty() }
-          onClear={ clear }
-          onPayment= { pay } />
+          <OrderCard 
+            order={ this.state.order }
+            isPayEnabled={ !this.state.order.isEmpty() }
+            onClear={ clear }
+            onPayment= { pay } />
 
-        {
-          (this.state.isPaymentDialogOpen ?
-            this.renderPaymentDialog()
-          : 
-          [])
-        }
+          {
+            (this.state.isPaymentDialogOpen ?
+              this.renderPaymentDialog()
+            : 
+            [])
+          }
 
-        {
-          (this.state.paymentStatus ?
-            this.renderPaymentStatus()
-          : 
-          [])
-        }
+          {
+            (this.state.paymentStatus ?
+              this.renderPaymentStatus()
+            : 
+            [])
+          }
 
-        {
-          (this.state.isCredentialsDialogOpen ?
-            this.renderCredentialsDialog()
-          : 
-          [])
-        }
+          {
+            (this.state.isCredentialsDialogOpen ?
+              this.renderCredentialsDialog()
+            : 
+            [])
+          }
+
+          {
+            (this.state.isRefundDialogOpen ?
+              this.renderRefundDialog()
+            : 
+            [])
+          }
+        </div>
+
+        <div className='refund-button'>
+          <Button 
+            type='inverse' 
+            onClick={ refund }>Refund</Button>
+        </div>
       </div>
     )
   }
 
-  async pay(barcode) {
-    let [username, password, branch] = getCredentials()
-
-    let client = new BlueCodeClient(username, password, BASE_URL_SANDBOX)
-
-    this.setState({ paymentStatus: { logEntries: [] } })
+  /** @returns {progress} */
+  getProgressLogger(operationName) {
+    this.setState({ 
+      paymentStatus: { 
+        logEntries: [],
+        operationName 
+      } 
+    })
 
     let updatePaymentStatus = (callback) => {
       setTimeout(() => {    
@@ -170,7 +222,7 @@ class App extends Component {
       })
     }
 
-    let progress = {
+    return {
       onProgress: (message, status) => 
         updatePaymentStatus(paymentStatus => ({
           ...paymentStatus,
@@ -183,6 +235,30 @@ class App extends Component {
           cancel
         }))
     }
+  }
+
+  async refund(acquirerTransactionId, amount, reason) {
+    let [username, password] = getCredentials()
+
+    let client = new BlueCodeClient(username, password, BASE_URL_SANDBOX)
+
+    try {
+      await client.refund(
+        acquirerTransactionId,
+        amount,
+        null,
+        this.getProgressLogger('Refund')
+      )
+    }
+    catch (e) {
+      console.error(e)
+    }
+  }
+
+  async pay(barcode) {
+    let [username, password, branch] = getCredentials()
+
+    let client = new BlueCodeClient(username, password, BASE_URL_SANDBOX)
 
     try {
       let response = await client.pay(
@@ -191,8 +267,12 @@ class App extends Component {
           branchExtId: branch,
           requestedAmount: Math.round(this.state.order.getTotal() * 100)
         },
-        progress
+        this.getProgressLogger('Payment')
       )
+
+      this.setState({
+        lastTransactionAcquirerTxId: response.acquirerTxId
+      })
     }
     catch (e) {
       console.error(e)
