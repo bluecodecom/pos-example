@@ -72,7 +72,12 @@ class App extends Component {
               <PaymentDialog
                 order={ this.state.order } 
                 onCancel={ closePaymentDialog }
-                onConfirm={ (barcode) => { closePaymentDialog(); this.pay(barcode) } } />
+                onConfirm={ 
+                  (barcode) => { 
+                    closePaymentDialog()
+                    this.pay(barcode) 
+                  } 
+                } />
 
             </ModalOverlay>
           : 
@@ -101,13 +106,13 @@ class App extends Component {
   async pay(barcode) {
     let client = new BlueCodeClient(ANDREAS_AUTH[0], ANDREAS_AUTH[1], BASE_URL_SANDBOX)
 
+    this.setState({ paymentStatus: { logEntries: [] } })
+
     let updatePaymentStatus = (callback) => {
-      setTimeout(() => {
-        let paymentStatus = this.state.paymentStatus || { logEntries: [] }
-    
+      setTimeout(() => {    
         this.setState({
-          paymentStatus: callback(paymentStatus)
-        })    
+          paymentStatus: callback(this.state.paymentStatus)
+        })
       })
     }
 
