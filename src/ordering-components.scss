@@ -25,6 +25,7 @@
     color: $text-color;
 
     .name {
+      text-transform: capitalize;
       flex-grow: 1;
     }
   }

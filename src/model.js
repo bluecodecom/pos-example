@@ -77,8 +77,8 @@ export class Order {
 export const PRODUCTS = [
   new Product('aubergine', 'aubergines', 1.50),
   new Product('avocado', 'avocados', 2.20),
-  new Product('beetroot', 'beetroots', 2.70),
   new Product('broccoli', 'heads of broccoli', 3.20),
   new Product('corn', 'corn cobs', 1.20),
+  new Product('beetroot', 'beetroots', 2.70),
   new Product('cucumber', 'cucumbers', 1.30)
 ]
