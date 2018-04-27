@@ -15,7 +15,8 @@ It shows a small vegetable stand POS and has support for:
 ## Payments
 
 To do a payment, click on a few vegetables and select the payment method "Blue Code". 
-Either use the Sandbox App to generate a barcode, or choose one of the pre-defined "magic" barcodes.
+Either use the [Sandbox App](https://bluecodepayment.readme.io/v4/docs/getting-started-1#section-sandbox-app) 
+to generate a barcode, or choose one of the pre-defined ["magic" barcodes](https://bluecodepayment.readme.io/v4/docs/getting-started-1#section-magic-barcodes).
 
 You will see a log describing the sequence of calls in detail.
 
