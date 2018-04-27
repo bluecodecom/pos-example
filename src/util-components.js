@@ -67,10 +67,13 @@ export function Card(props) {
  * @param {() => void} props.onChange
  */
 export function TextInput(props) {
-  return <div className="text-input">
-    <input type="text" required value={ props.value } onChange={ props.onChange } />
-    <span className="highlight"></span>
-    <span className="bar"></span>
-    <label>{ props.placeholder }</label>
+  return <div className='text-input'>
+    <div className='inner'>
+      <input type='text' required value={ props.value } onChange={ props.onChange } />
+      <span className='highlight'></span>
+      <span className='bar'></span>
+      <label>{ props.placeholder }</label>
+    </div>
+    { props.helper ? <div className='helper'>{ props.helper }</div> : [] }
   </div>
 }

@@ -1,6 +1,5 @@
 @import 'variables.scss';
-
-$dialogMargin: 2 * $unit;
+@import 'util-components.scss';
 
 .scrollable-panel {
   overflow-y: scroll;
@@ -33,23 +32,6 @@ $dialogMargin: 2 * $unit;
       img {
         width: 100%;
       }
-    }
-  }
-}
-
-.dialog {
-  width: 400px;
-  background-color: $background-color;
-  box-shadow: 0 4px 10px 0px rgba(0,0,0,0.225); 
-
-  .body {
-    padding: $dialogMargin;
-    color: $text-color;
-
-    .button-bar {
-      margin-top: 4 * $unit;
-      display: flex;
-      justify-content: flex-end;
     }
   }
 }

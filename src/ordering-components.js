@@ -36,9 +36,14 @@ function ProductButton(props) {
  * The card that shows the available products.
  * @param {Object} props
  * @param {(Product) => any} props.onProductSelect
+ * @param {() => void} props.onOpenSettings
  */
 export function ProductSelectionCard(props) {
-  return (<Card title='Product' className='product-selection-card'>
+  return (<Card 
+      title='Product' 
+      className='product-selection-card'
+      actions={ [ 'ic_settings_white_24px' ] } 
+      onAction={ props.onOpenSettings }>
     { PRODUCTS.map(product =>
       <ProductButton 
         key={ product.name } 
@@ -106,7 +111,8 @@ function PaymentPanel(props) {
   return <div className='payment-panel'>
     <Button 
       type='flat'
-      disabled={ !props.isPayEnabled }>Cash</Button>
+      disabled={ !props.isPayEnabled }
+      onClick={ () => alert('Sorry, this POS only accepts Blue Code.')}>Cash</Button>
     <Button 
       type='inverse' 
       disabled={ !props.isPayEnabled } 
@@ -127,7 +133,7 @@ export function OrderCard(props) {
     <Card title='Order' 
         className='order-card' 
         actions={ [ 'ic_clear_white_24px' ] } 
-        onAction={ ()=> props.onClear() }>
+        onAction={ props.onClear }>
       <OrderItemsPanel 
         orderItems={ props.order.orderItems }/>
 

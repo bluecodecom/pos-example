@@ -4,16 +4,12 @@ import { Order } from './model'
 import { OrderCard, ProductSelectionCard } from './ordering-components'
 import { PaymentDialog, StatusDialog, Spinner } from './payment-components'
 import { ModalOverlay } from './util-components'
-import { BlueCodeClient } from './BlueCodeClient'
-
-const ANDREAS_AUTH = ['PORTAL-813eadd9-8f99-40d7-9cea-d13dd0ae9610', 'fc228542-4282-4637-ae91-dc36f5956752']
+import { BlueCodeClient, BASE_URL_SANDBOX } from './BlueCodeClient'
+import { CredentialsDialog, getCredentials } from './credentials-components';
 
 const MAGIC_SUCCESS        = '98802222100100123456'
 const MAGIC_PROCESS_FOR_5S = '98802222999900305000'
 const MAGIC_PROCESS_FOR_15S = '98802222999900314000'
-
-const BASE_URL_PRODUCTION = 'https://merchant-api.bluecode.com/v4'
-const BASE_URL_SANDBOX = 'https://merchant-api.bluecode.biz/v4'
 
 /** 
  @typedef { Object } paymentStatus 
@@ -26,10 +22,16 @@ class App extends Component {
   constructor() {
     super()
 
+    /**
+     * @property { string[] } paymentStatus.logEntries
+     * @property { () => void } paymentStatus.cancel
+     */
     this.state = {
       order: new Order(),
       isPaymentDialogOpen: false,
-      // if present, a payment is in progress
+      isCredentialsDialogOpen: !getCredentials(),
+      // if present, a payment is in progress 
+      // and we show the payment status dialog
       paymentStatus: null, 
     }
   }
@@ -43,59 +45,109 @@ class App extends Component {
     })
   }
 
-  render() {
-    let closePaymentDialog = () => 
+  renderPaymentDialog() {
+    let close = () => 
       this.setState({ isPaymentDialogOpen: false })
 
-    let closeStatusDialog = () => 
+    return <ModalOverlay 
+      onClose={ close }>
+
+      <PaymentDialog
+        order={ this.state.order } 
+        onCancel={ close }
+        onConfirm={ 
+          (barcode) => { 
+            close()
+            this.pay(barcode) 
+          } 
+        } />
+
+    </ModalOverlay>
+  }
+
+  renderPaymentStatus() {
+    let close = () => 
       this.setState({ paymentStatus: null })
 
-      return (
+    return <ModalOverlay 
+      onClose={ close }>
+
+      <StatusDialog
+        logEntries={ this.state.paymentStatus.logEntries }
+        status={ this.state.paymentStatus.status }
+        onCancel={ this.state.paymentStatus.cancel }
+        onClose={ close } />
+
+    </ModalOverlay>
+  }
+
+  renderCredentialsDialog() {
+    let close = () => 
+      this.setState({ 
+        isCredentialsDialogOpen: null 
+      })
+
+    return <ModalOverlay 
+      onClose={ close }>
+
+      <CredentialsDialog
+        onCancel={ close } 
+        onDone={ close }
+        canCancel={ !!getCredentials() }
+      />
+
+    </ModalOverlay>
+  }
+
+  render() {
+    let openSettings = () => 
+      this.setState({ 
+        isCredentialsDialogOpen: true
+      }) 
+
+    let clear = () => 
+      this.setState({ 
+        order: new Order() 
+      })
+    
+    let pay = () => {
+      this.setState({ 
+        isPaymentDialogOpen: true 
+      })
+    }
+    
+    let selectProduct = (product)=> 
+      this.addProductToOrder(product) 
+  
+    return (
       <div className='App'>
         <ProductSelectionCard 
-          onProductSelect={ (product)=> 
-            this.addProductToOrder(product) } />
+          onOpenSettings={ openSettings }
+          onProductSelect={ selectProduct } />
 
         <OrderCard 
           order={ this.state.order }
           isPayEnabled={ !this.state.order.isEmpty() }
-          onClear={ () => 
-            this.setState({ order: new Order() }) }
-          onPayment= { () => 
-            this.setState({ isPaymentDialogOpen: true }) } />
+          onClear={ clear }
+          onPayment= { pay } />
 
         {
           (this.state.isPaymentDialogOpen ?
-            <ModalOverlay 
-                onClose={ closePaymentDialog }>
-
-              <PaymentDialog
-                order={ this.state.order } 
-                onCancel={ closePaymentDialog }
-                onConfirm={ 
-                  (barcode) => { 
-                    closePaymentDialog()
-                    this.pay(barcode) 
-                  } 
-                } />
-
-            </ModalOverlay>
+            this.renderPaymentDialog()
           : 
           [])
         }
 
         {
           (this.state.paymentStatus ?
-            <ModalOverlay 
-                onClose={ closeStatusDialog }>
+            this.renderPaymentStatus()
+          : 
+          [])
+        }
 
-              <StatusDialog
-                logEntries={ this.state.paymentStatus.logEntries }
-                status={ this.state.paymentStatus.status }
-                onCancel={ this.state.paymentStatus.cancel }
-                onClose={ closeStatusDialog } />
-
-            </ModalOverlay>
+        {
+          (this.state.isCredentialsDialogOpen ?
+            this.renderCredentialsDialog()
           : 
           [])
         }
@@ -104,7 +156,9 @@ class App extends Component {
   }
 
   async pay(barcode) {
-    let client = new BlueCodeClient(ANDREAS_AUTH[0], ANDREAS_AUTH[1], BASE_URL_SANDBOX)
+    let [username, password, branch] = getCredentials()
+
+    let client = new BlueCodeClient(username, password, BASE_URL_SANDBOX)
 
     this.setState({ paymentStatus: { logEntries: [] } })
 
@@ -134,7 +188,7 @@ class App extends Component {
       let response = await client.pay(
         {
           barcode: barcode,
-          branchExtId: 'test',
+          branchExtId: branch,
           requestedAmount: Math.round(this.state.order.getTotal() * 100)
         },
         progress

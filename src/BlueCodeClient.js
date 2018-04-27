@@ -15,6 +15,9 @@ const DEFAULT_TIMEOUT_MS = 10000
 const BACKOFF_TIME_MS = 2000
 const MAX_RETRIES = 3
 
+export const BASE_URL_PRODUCTION = 'https://merchant-api.bluecode.com/v4'
+export const BASE_URL_SANDBOX = 'https://merchant-api.bluecode.biz/v4'
+
 export const STATUS_CONNECTING = 'connecting'
 export const STATUS_PROCESSING = 'processing'
 export const STATUS_APPROVED = 'approved'
