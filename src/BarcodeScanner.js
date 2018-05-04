@@ -54,6 +54,10 @@ export class BarcodeScanner extends Component {
     }
   }  
 
+  componentWillUnmount() {
+    Quagga.stop()
+  }
+
   componentDidMount() {
     Quagga.init(
       this.getQuaggaParameters(), 
