@@ -89,7 +89,7 @@ export class BarcodeScanner extends Component {
             
             console.log('Barcode ' + barcode + ', plausible: ' + isBarcodePlausible(barcode) + ', error: ' + maxError)
 
-            if (maxError < 0.1 && isBarcodePlausible(barcode)) {
+            if (maxError < 0.11 && isBarcodePlausible(barcode)) {
               // quagga keeps calling us, so block future calls
               didAlreadyDetectBarcode = true
 
