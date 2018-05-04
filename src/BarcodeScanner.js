@@ -31,8 +31,8 @@ export class BarcodeScanner extends Component {
       inputStream: {
         type: "LiveStream",
         constraints: {
-          width: {min: 800},
-          height: {min: 600},
+          width: {min: 1280},
+          height: {min: 720},
           facingMode: "environment",
           aspectRatio: { min: 1, max: 2 }
         },
@@ -64,6 +64,8 @@ export class BarcodeScanner extends Component {
       (err) => {
         if (err) {
           this.props.onCancel()
+
+          console.error(err)
 
           // wait for the empty video panel to close
           setTimeout(() =>
@@ -116,7 +118,7 @@ export class BarcodeScanner extends Component {
         onClick={ this.props.onCancel }>
 
         <div className='close'>
-          <img src='img/ic_clear_white_24px.svg'/>
+          <img src='img/ic_clear_white_24px.svg' alt='Close' />
         </div>
         
         <div className='label-container'>

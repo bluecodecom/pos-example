@@ -70,8 +70,6 @@ export class PaymentDialog extends Component {
     let closeScanner = 
       () => this.setState({ isScannerOpen: false })
 
-    let didAlreadyDetectBarcode = false
-
     let onBarcodeDetected = (barcode) => {
       this.setState({ 
         barcode: barcode,
@@ -103,7 +101,9 @@ export class PaymentDialog extends Component {
           <Button
               type='flat' 
               onClick={ openScanner }>
-            <img src='img/ic_photo_camera_black_24px.svg'/>
+            <img 
+              src='img/ic_photo_camera_black_24px.svg'
+              alt='Scan barcode'/>
           </Button>
         </div>          
       </div>
