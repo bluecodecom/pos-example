@@ -2,8 +2,8 @@ import Quagga from 'quagga'
 import React, { Component } from 'react'
 import './BarcodeScanner.css' 
 
-const ALIPAY_PREFIX = '2868' 
-const BLUE_CODE_PREFIX = '988'
+const ALIPAY_REGEX = /^(25|26|27|28|29|30)[0-9]{14,22}$/
+const BLUE_CODE_REGEX = /^988[0-9]{17}$/
 
 /**
  * Unfortunately the barcode scanning is so error-prone we need to 
@@ -14,8 +14,8 @@ function isBarcodePlausible(barcode) {
   return !!barcode 
     && barcode.length >= 18
     && barcode.length <= 20
-    && (barcode.startsWith(BLUE_CODE_PREFIX) || barcode.startsWith(ALIPAY_PREFIX))
-    && barcode.match(/^[0-9]+$/)
+    && (barcode.match(ALIPAY_REGEX) 
+      || barcode.match(BLUE_CODE_REGEX))
 }
 
 export class BarcodeScanner extends Component {
@@ -23,7 +23,8 @@ export class BarcodeScanner extends Component {
 
   state = {
     isLoading: true,
-    isFuzzy: false
+    isFuzzy: false,
+    isAlipay: false,
   }
 
   getQuaggaParameters() {
@@ -88,7 +89,7 @@ export class BarcodeScanner extends Component {
             
             console.log('Barcode ' + barcode + ', plausible: ' + isBarcodePlausible(barcode) + ', error: ' + maxError)
 
-            if (maxError < 0.1 && isBarcodePlausible(barcode)) {            
+            if (maxError < 0.1 && isBarcodePlausible(barcode)) {
               // quagga keeps calling us, so block future calls
               didAlreadyDetectBarcode = true
 
@@ -96,7 +97,9 @@ export class BarcodeScanner extends Component {
             }
             else if (!this.state.isFuzzy) {
               this.setState({
-                isFuzzy: true
+                isFuzzy: true,
+                isAlipay: barcode.match(ALIPAY_REGEX),
+                isPlausible: isBarcodePlausible(barcode)
               })
 
               setTimeout(() => {
@@ -111,6 +114,24 @@ export class BarcodeScanner extends Component {
   }
 
   render() {
+    let label =              
+      'Show the camera a Blue Code or Alipay barcode.'
+
+    if (this.state.isLoading) {
+      label = 'Initializing camera...'
+    }
+    else if (this.state.isFuzzy) {
+      if (this.state.isAlipay) {
+        label = 'Closer, please. Open the barcode in fullscreen.'
+      }
+      else if (!this.state.isPlausible) {
+        label = 'That does not seem like a correct barcode.'
+      }
+      else {
+        label = 'Closer, please. I can\'t read that.'
+      }
+    }
+
     return <div className='barcode-scanner'>
       <div 
         ref={ this.scannerDomNode  } 
@@ -124,14 +145,7 @@ export class BarcodeScanner extends Component {
         <div className='label-container'>
           <div className='label'>
             {
-              this.state.isLoading ? 
-                'Initializing camera...'
-                :
-                (
-                  this.state.isFuzzy ?
-                  'Closer, please. I can\'t read that.' :
-                  'Show the camera a Blue Code or Alipay barcode.'
-                )
+              label
             }
           </div>
         </div>
