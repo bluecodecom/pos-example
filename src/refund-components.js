@@ -32,6 +32,15 @@ export class RefundDialog extends Component {
           helper={ label } />
       </div>
 
+    let refund = () => {
+      if (this.state.acquirerTxId) {
+        // null if empty
+        let amount = parseFloat(this.state.amount) || null
+  
+        this.props.onRefund(this.state.acquirerTxId, amount, '') 
+      }
+    }
+
     return <Card title='Refund' className='refund-dialog'>
       { inputField('amount', 'Amount', 'Leave empty for full refund.') }
       { inputField('acquirerTxId', 'Acquirer Transaction ID', 'Transaction ID printed on the receipt.') }
@@ -49,7 +58,7 @@ export class RefundDialog extends Component {
         <Button 
           type='flat'
           disabled={ !this.state.acquirerTxId }
-          onClick={ () => this.props.onRefund(this.state.acquirerTxId, this.state.amount, '') }>
+          onClick={ refund }>
           Refund 
         </Button>
       </div>

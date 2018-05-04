@@ -236,18 +236,23 @@ export class BlueCodeClient {
    * Refund a transaction.
    * @async
    * @param {string} acquirerTxId 
-   * @param {number} [refundAmount]
+   * @param {number} [amount]
    * @param {string} [reason]
    * @param {progress} [progress]
    * @return {statusResponse} 
   */
-  async refund(acquirerTxId, refundAmount, reason, progress) {
+  async refund(acquirerTxId, amount, reason, progress) {
     try {
-      await this.call('/refund', { 
+      let payload = { 
         acquirerTxId, 
-        refundAmount, 
         reason 
-      }, progress)
+      }
+
+      if (amount > 0) {
+        payload = { amount , ...payload }
+      }
+
+      await this.call('/refund', payload, progress)
 
       progress.onProgress('Refund successful.', 'SUCCESS')
     }
