@@ -2,6 +2,11 @@ import React, { Component } from 'react'
 import './payment-components.css'
 import { Card, Button, TextInput } from './util-components'
 import { STATUS_PROCESSING, STATUS_CONNECTING } from './BlueCodeClient';
+import { BarcodeScanner } from './BarcodeScanner';
+
+/** 
+ * These are the components involved in the payment workflow
+ */
 
 class MagicBarcode {
   /**
@@ -48,35 +53,68 @@ function MagicBarcodesList(props) {
   </div>
 }
 
-/** 
- * These are the components involved in the payment workflow
- */
-
 /**
  * Dialog for entering bar code and showing status.
  */
 export class PaymentDialog extends Component {
-  constructor() {
-    super()
-
-    this.state = {
-      barcode: ''
-    }
+  state = {
+    barcode: '',
+    isScannerOpen: false,
+    isFuzzy: false
   }
 
   render() {
+    let openScanner = 
+      () => this.setState({ isScannerOpen: true })
+    
+    let closeScanner = 
+      () => this.setState({ isScannerOpen: false })
+
+    let didAlreadyDetectBarcode = false
+
+    let onBarcodeDetected = (barcode) => {
+      this.setState({ 
+        barcode: barcode,
+        isScannerOpen: false
+      })
+      
+      this.props.onConfirm(barcode)
+    }
+
     return <Card title='Blue Code Payment' className='payment-dialog'>
-      <TextInput 
-        value={ this.state.barcode }
-        onChange={ event => 
-          this.setState({ barcode: event.target.value }) }
-        placeholder='Enter barcode' />
+      {
+        this.state.isScannerOpen ?
+          <BarcodeScanner 
+            onBarcodeDetected={ onBarcodeDetected } 
+            onCancel={ closeScanner } 
+            />
+          :
+          []
+      }
+      <div className='text-input-container'>
+        <div>
+          <TextInput 
+            value={ this.state.barcode }
+            onChange={ event => 
+              this.setState({ barcode: event.target.value }) }
+            placeholder='Enter barcode' />
+        </div>
+        <div className='camera-button-container'>
+          <Button
+              type='flat' 
+              onClick={ openScanner }>
+            <img src='img/ic_photo_camera_black_24px.svg'/>
+          </Button>
+        </div>          
+      </div>
   
       <div className='barcode-label'>
         Magic barcodes
       </div>
 
-      <MagicBarcodesList onSelect={ (barcode) => this.setState({ barcode: barcode.barcode }) }/>
+      <MagicBarcodesList onSelect={ 
+        (barcode) => this.setState({ barcode: barcode.barcode }) 
+      }/>
 
       <div className='button-bar'>
         <Button 

@@ -1,0 +1,71 @@
+@import 'variables.scss';
+   
+.barcode-scanner {
+  // fade the dialog box underneath
+  background-color: rgba(255,255,255,0.8);
+
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+
+  .video-container {
+    position: fixed;
+    top: 20%;
+    left: 20%;
+    right: 20%;
+    min-width: 480px;
+    min-height: 320px;
+    background-color: #a0a0a0;
+
+    display: flex;
+    align-items: center;
+
+    canvas {
+      left: 100vw; 
+      position: fixed;
+    }
+
+    .close {
+      position: absolute;
+      top: $unit;
+      right: $unit;
+      z-index: 3;
+      width: 4 * $unit;
+      height: 4 * $unit;
+      border-radius: 9999px;
+      cursor: pointer;
+
+      &:hover {
+        background-color: rgba(255, 255, 255, 0.2);
+      }
+
+      img {
+        width: 4 * $unit;
+        height: 4 * $unit;
+      }
+    }
+
+    .label-container {
+      position: absolute;
+      bottom: 1.5 * $unit;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: center;      
+
+      .label {
+        border-radius: $unit;
+        background-color: rgba(255, 255, 255, 0.7);
+        padding: 4px 8px;
+        font-size: 12px;
+      }
+    }
+
+    video {
+      width: 100%;
+    }
+  }
+}

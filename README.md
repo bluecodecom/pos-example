@@ -38,7 +38,7 @@ ID of the last payment transaction.
 
 To run the project locally, check it out and run `yarn start` or `npm start` (obviously, npm or yarn needs to be installed). 
 
-Styling is done using SCSS. Run `yarn run watch-css` to run a file watcher that continuously compiles it CSS.
+Styling is done using SCSS. Run `yarn run watch-css` to run a file watcher that continuously compiles it to CSS.
 
 For full documentation of the development flow, see [Create React App](https://github.com/facebook/create-react-app), the framework on which this project is built.
 

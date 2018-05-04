@@ -39,6 +39,9 @@
 .payment-dialog {
   @extend .dialog;
 
+  // needed to position the barcode scanner right over it.
+  position: relative;
+
   .title {
     background-color: $inverted-background-color;
   }
@@ -49,6 +52,32 @@
       margin-top: 6 * $unit;
       margin-bottom: 2 * $unit;
     }
+
+    .camera-button-container {
+      display: flex;
+      justify-content:  flex-end;
+      flex-grow: 1;
+
+      button {
+        margin-left: $unit;
+        margin-top: $text-input-top-margin;
+        height: 6 * $unit;
+        width: 6 * $unit;
+        padding: 0;
+        display: flex;
+        align-content: center;
+        justify-content: center;
+  
+        img {
+          width: 4 * $unit;
+          height: 4 * $unit
+        }
+      }
+    }
+  }
+
+  .text-input-container {
+    display: flex;
   }
 }
 

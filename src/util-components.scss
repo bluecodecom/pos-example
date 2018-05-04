@@ -141,6 +141,8 @@ button {
   margin-right: 2 * $unit;
 }
 
+$text-input-top-margin: 32px;
+
 /**
   * Derived from
   * https://scotch.io/tutorials/css/google-material-design-input-boxes-in-css3
@@ -152,7 +154,7 @@ button {
 
   .inner {
     position: relative;
-    margin-top: 32px;
+    margin-top: $text-input-top-margin;
   
     input {
       font-size: 18px;

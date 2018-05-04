@@ -5,6 +5,7 @@
   "homepage": "https://storage.googleapis.com/example-pos",
   "dependencies": {
     "node-sass-chokidar": "^1.2.2",
+    "quagga": "^0.12.1",
     "react": "^16.3.2",
     "react-dom": "^16.3.2",
     "react-scripts": "1.1.4"
