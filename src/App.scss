@@ -10,11 +10,18 @@
 
 body {
   font-family: Roboto, sans-serif;
+
+  #root {
+    display: flex;
+    justify-content: center;
+  }
 }
 
 .App {
   position: relative;
-  width: 700px;
+  width: 800px;
+  min-width: 600px;
+  max-width: 800px;
 
   .cards {
     display: flex;
