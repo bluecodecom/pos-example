@@ -6,15 +6,32 @@ import { generateMerchantTxId } from './client-util';
 
 const CREDENTIALS_KEY = 'credentials'
 
+function getLocalStorage() {
+  try {
+    return localStorage
+  }
+  catch (e) {
+    console.error(e)
+
+    let storage = {}
+
+    // fallback, e.g. when third-party cookies are denied and running in an iframe
+    return {
+      getItem: (key) => storage[key],
+      setItem: (key, value) => storage[key] = value
+    }
+  }
+}
+
 export function setCredentials(username, password, branch) {
-  localStorage.setItem(CREDENTIALS_KEY, JSON.stringify([username, password, branch]))
+  getLocalStorage().setItem(CREDENTIALS_KEY, JSON.stringify([username, password, branch]))
 }
 
 /**
  * @returns string[] An array of user name, password and branch
  */
 export function getCredentials() {
-  let json = localStorage.getItem(CREDENTIALS_KEY)
+  let json = getLocalStorage().getItem(CREDENTIALS_KEY)
 
   if (json) {
     return JSON.parse(json)
