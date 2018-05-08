@@ -58,6 +58,8 @@
 .status-dialog {
   @extend .dialog;
 
+  min-width: 400px;
+
   .log-panel {
     @extend .scrollable-panel;
 

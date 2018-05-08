@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import './refund-components.css'
 import { TextInput, Card, Button } from './util-components';
-import { BarcodeScanner, ScanBarcodeButton } from './BarcodeScanner';
+import { BarcodeScanner, ScanBarcodeButton, ALIPAY_TRANSACTION_REGEX } from './BarcodeScanner';
 
 export class RefundDialog extends Component {
   constructor() {
@@ -63,6 +63,9 @@ export class RefundDialog extends Component {
           <BarcodeScanner 
             onBarcodeDetected={ onBarcodeDetected } 
             onCancel={ closeScanner } 
+            matchRegexps={ [ ALIPAY_TRANSACTION_REGEX ] }
+            barcodeTypeLabel='Alipay transaction'
+            errorThreshold={ 0.12 }
             />
           :
           []

@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import './payment-components.css'
 import { Card, Button, TextInput } from './util-components'
 import { STATUS_PROCESSING, STATUS_CONNECTING } from './BlueCodeClient';
-import { BarcodeScanner, ScanBarcodeButton } from './BarcodeScanner';
+import { BarcodeScanner, ScanBarcodeButton, ALIPAY_REGEX, BLUE_CODE_REGEX } from './BarcodeScanner';
 
 /** 
  * These are the components involved in the payment workflow
@@ -85,6 +85,8 @@ export class PaymentDialog extends Component {
           <BarcodeScanner 
             onBarcodeDetected={ onBarcodeDetected } 
             onCancel={ closeScanner } 
+            matchRegexps={ [ ALIPAY_REGEX, BLUE_CODE_REGEX ] }
+            barcodeTypeLabel='(Blue Code or Alipay) payment'
             />
           :
           []

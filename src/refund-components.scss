@@ -3,7 +3,7 @@
 
 .refund-dialog {
   @extend .dialog;
-  width: 500px;
+  min-width: 450px;
 
   .title {
     background-color: $inverted-background-color;
