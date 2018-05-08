@@ -8,6 +8,17 @@ import { BlueCodeClient, BASE_URL_SANDBOX } from './BlueCodeClient'
 import { CredentialsDialog, getCredentials } from './credentials-components';
 import { RefundDialog } from './refund-components';
 
+const CENTS_PER_EURO = 100
+
+/**
+ * Converts from the amounts entered in the UI - which are in euros - to those
+ * sent to the API - which are in cents (i.e. the minor currency unit).
+ * @param {number} amountInMajorUnit 
+ */
+function toMinorCurrencyUnit(amountInMajorUnit) {
+  return Math.round(amountInMajorUnit * CENTS_PER_EURO)
+}
+
 /** 
  @typedef { Object } paymentStatus 
  @property { string[] } logEntries
@@ -119,7 +130,7 @@ class App extends Component {
               isRefundDialogOpen: false
             })
 
-            this.refund(acquirerTransactionId, amount, reason) 
+            this.refund(acquirerTransactionId, toMinorCurrencyUnit(amount), reason) 
           }
         }
         onCancel={ close } 
@@ -265,7 +276,7 @@ class App extends Component {
         {
           barcode: barcode,
           branchExtId: branch,
-          requestedAmount: Math.round(this.state.order.getTotal() * 100)
+          requestedAmount: toMinorCurrencyUnit(this.state.order.getTotal())
         },
         this.getProgressLogger('Payment')
       )
