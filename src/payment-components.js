@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import './payment-components.css'
 import { Card, Button, TextInput } from './util-components'
 import { STATUS_PROCESSING, STATUS_CONNECTING } from './BlueCodeClient';
-import { BarcodeScanner } from './BarcodeScanner';
+import { BarcodeScanner, ScanBarcodeButton } from './BarcodeScanner';
 
 /** 
  * These are the components involved in the payment workflow
@@ -89,24 +89,14 @@ export class PaymentDialog extends Component {
           :
           []
       }
-      <div className='text-input-container'>
-        <div>
-          <TextInput 
-            value={ this.state.barcode }
-            onChange={ event => 
-              this.setState({ barcode: event.target.value }) }
-            placeholder='Enter barcode' />
-        </div>
-        <div className='camera-button-container'>
-          <Button
-              type='flat' 
-              onClick={ openScanner }>
-            <img 
-              src='img/ic_photo_camera_black_24px.svg'
-              alt='Scan barcode'/>
-          </Button>
-        </div>          
-      </div>
+      <ScanBarcodeButton
+          onClick={ openScanner }>
+        <TextInput 
+          value={ this.state.barcode }
+          onChange={ event => 
+            this.setState({ barcode: event.target.value }) }
+          placeholder='Enter barcode' />
+      </ScanBarcodeButton>
   
       <div className='barcode-label'>
         Magic barcodes

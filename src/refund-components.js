@@ -1,6 +1,7 @@
 import React, { Component } from 'react'
 import './refund-components.css'
 import { TextInput, Card, Button } from './util-components';
+import { BarcodeScanner, ScanBarcodeButton } from './BarcodeScanner';
 
 export class RefundDialog extends Component {
   constructor() {
@@ -9,6 +10,7 @@ export class RefundDialog extends Component {
     this.state = {
       amount: '',
       acquirerTxId: '',
+      isScannerOpen: false
     }
   }
 
@@ -41,9 +43,47 @@ export class RefundDialog extends Component {
       }
     }
 
+    let openScanner = 
+    () => this.setState({ isScannerOpen: true })
+  
+    let closeScanner = 
+      () => this.setState({ isScannerOpen: false })
+
+    let onBarcodeDetected = 
+      (barcode) => {
+        this.setState({ 
+          acquirerTxId: barcode, 
+          isScannerOpen: false 
+        })
+      }
+
     return <Card title='Refund' className='refund-dialog'>
-      { inputField('amount', 'Amount', 'Leave empty for full refund.') }
-      { inputField('acquirerTxId', 'Acquirer Transaction ID', 'Transaction ID printed on the receipt.') }
+      {
+        this.state.isScannerOpen ?
+          <BarcodeScanner 
+            onBarcodeDetected={ onBarcodeDetected } 
+            onCancel={ closeScanner } 
+            />
+          :
+          []
+      }
+
+      { 
+        inputField(
+          'amount', 
+          'Amount', 
+          'Leave empty for full refund.')
+      }
+
+      <ScanBarcodeButton 
+          onClick={ openScanner }>
+        { 
+          inputField(
+            'acquirerTxId', 
+            'Acquirer Transaction ID', 
+            'Transaction ID printed on the receipt.') 
+        }
+      </ScanBarcodeButton>
 
       <div className='button-bar'>
         {

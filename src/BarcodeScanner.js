@@ -1,6 +1,7 @@
 import Quagga from 'quagga'
 import React, { Component } from 'react'
 import './BarcodeScanner.css' 
+import { Button } from './util-components';
 
 const ALIPAY_REGEX = /^(25|26|27|28|29|30)[0-9]{14,22}$/
 const BLUE_CODE_REGEX = /^988[0-9]{17}$/
@@ -16,6 +17,28 @@ function isBarcodePlausible(barcode) {
     && barcode.length <= 20
     && (barcode.match(ALIPAY_REGEX) 
       || barcode.match(BLUE_CODE_REGEX))
+}
+
+/**
+ * The button next to an input field for triggering barcode scanning.
+ * @param {Object} props 
+ * @param {() => void} props.onClick
+ */
+export function ScanBarcodeButton(props) {
+  return <div className='scan-barcode-button'>
+    <div>
+      { props.children }
+    </div>
+    <div className='button-container'>
+      <Button
+          type='flat' 
+          onClick={ props.onClick }>
+        <img 
+          src='img/ic_photo_camera_black_24px.svg'
+          alt='Scan barcode'/>
+      </Button>
+    </div>          
+  </div>
 }
 
 export class BarcodeScanner extends Component {
