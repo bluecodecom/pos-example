@@ -23,6 +23,11 @@ function getLocalStorage() {
   }
 }
 
+/**
+ * @param {String} username 
+ * @param {String} password 
+ * @param {String} branch 
+ */
 export function setCredentials(username, password, branch) {
   getLocalStorage().setItem(CREDENTIALS_KEY, JSON.stringify([username, password, branch]))
 }
@@ -104,10 +109,11 @@ export class CredentialsDialog extends Component {
   }
 
   render() {
-    let inputField = (property, placeholder, label) => 
+    let inputField = (property, placeholder, label, autocomplete) => 
       <div className='field'>
         <TextInput 
           value={ this.state[property] }
+          autocomplete={ autocomplete }
           onChange={ event => 
             this.setState({ [property]: event.target.value }) 
           }
@@ -124,9 +130,15 @@ export class CredentialsDialog extends Component {
         :
         []
       }
-      { inputField('username', 'Access ID', 'User name for API calls. See developer portal for credentials.') }
-      { inputField('password', 'Access Secret Key (password)', 'Password for API calls.') }
-      { inputField('branch', 'Branch', 'The branch identifier. See developer portal.') }
+      { 
+        inputField('username', 'Access ID', 'User name for API calls. See developer portal for credentials.', 'username') 
+      }
+      { 
+        inputField('password', 'Access Secret Key (password)', 'Password for API calls.', 'current-password') 
+      }
+      { 
+        inputField('branch', 'Branch', 'The branch identifier. See developer portal.', '') 
+      }
 
       <div className='button-bar'>
         {

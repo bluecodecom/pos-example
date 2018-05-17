@@ -248,10 +248,16 @@ class App extends Component {
     }
   }
 
-  async refund(acquirerTransactionId, amount, reason) {
+  getClient() {
     let [username, password] = getCredentials()
 
-    let client = new BlueCodeClient(username, password, BASE_URL_SANDBOX)
+    let baseUrl = this.props.baseUrl || BASE_URL_SANDBOX
+
+    return new BlueCodeClient(username, password, baseUrl)
+  }
+
+  async refund(acquirerTransactionId, amount, reason) {
+    let client = this.getClient()
 
     try {
       await client.refund(
@@ -269,7 +275,7 @@ class App extends Component {
   async pay(barcode) {
     let [username, password, branch] = getCredentials()
 
-    let client = new BlueCodeClient(username, password, BASE_URL_SANDBOX)
+    let client = this.getClient()
 
     try {
       let response = await client.pay(

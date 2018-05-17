@@ -320,8 +320,6 @@ export class BlueCodeClient {
 
       await wait(paymentStatus.checkStatusIn, progress)
 
-      progress.onProgress('Calling status endpoint...', STATUS_PROCESSING)
-
       response = await this.status(paymentOptions.merchantTxId, progress)
 
       let payment = response.payment

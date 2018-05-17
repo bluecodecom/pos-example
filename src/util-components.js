@@ -69,7 +69,13 @@ export function Card(props) {
 export function TextInput(props) {
   return <div className='text-input'>
     <div className='inner'>
-      <input type='text' required value={ props.value } onChange={ props.onChange } />
+      <input 
+        type='text' 
+        required 
+        autocomplete={ props.autocomplete || '' }
+        value={ props.value } 
+        onChange={ props.onChange } 
+        />
       <span className='highlight'></span>
       <span className='bar'></span>
       <label>{ props.placeholder }</label>
