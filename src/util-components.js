@@ -72,7 +72,10 @@ export function TextInput(props) {
       <input 
         type='text' 
         required 
-        autocomplete={ props.autocomplete || '' }
+        autoComplete={ props.autoComplete || '' } 
+        autoCorrect={ props.autoComplete ? 'off' : '' } 
+        autoCapitalize={ props.autoComplete ? 'off' : '' } 
+        spellCheck={ props.autoComplete ? 'false' : 'on' }  
         value={ props.value } 
         onChange={ props.onChange } 
         />

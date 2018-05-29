@@ -115,11 +115,11 @@ export class CredentialsDialog extends Component {
   }
 
   render() {
-    let inputField = (property, placeholder, label, autocomplete) => 
+    let inputField = (property, placeholder, label, autoComplete) => 
       <div className='field'>
         <TextInput 
           value={ this.state[property] }
-          autocomplete={ autocomplete }
+          autoComplete={ autoComplete }
           onChange={ event => 
             this.setState({ [property]: event.target.value }) 
           }
