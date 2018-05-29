@@ -12,10 +12,11 @@
   },
   "scripts": {
     "start": "node-sass-chokidar src/ -o src/; react-scripts start",
-    "build": "react-scripts build",
+    "build": "node-sass-chokidar src/ -o src/; react-scripts build",
     "test": "react-scripts test --env=jsdom",
     "eject": "react-scripts eject",
     "build-css": "node-sass-chokidar src/ -o src/",
-    "watch-css": "npm run build-css && node-sass-chokidar src/ -o src/ --watch --recursive"
+    "watch-css": "npm run build-css && node-sass-chokidar src/ -o src/ --watch --recursive",
+    "postinstall": "node-sass-chokidar src/ -o src/"
   }
 }
