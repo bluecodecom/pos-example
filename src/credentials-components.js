@@ -6,6 +6,8 @@ import { generateMerchantTxId } from './client-util';
 
 const CREDENTIALS_KEY = 'credentials'
 
+let localStorageFallback = {}
+
 function getLocalStorage() {
   try {
     return localStorage
@@ -13,12 +15,10 @@ function getLocalStorage() {
   catch (e) {
     console.error(e)
 
-    let storage = {}
-
     // fallback, e.g. when third-party cookies are denied and running in an iframe
     return {
-      getItem: (key) => storage[key],
-      setItem: (key, value) => storage[key] = value
+      getItem: (key) => localStorageFallback[key],
+      setItem: (key, value) => localStorageFallback[key] = value
     }
   }
 }
@@ -39,7 +39,13 @@ export function getCredentials() {
   let json = getLocalStorage().getItem(CREDENTIALS_KEY)
 
   if (json) {
-    return JSON.parse(json)
+    let credentials = JSON.parse(json)
+
+    let isIterable = (obj) => typeof credentials[Symbol.iterator] === 'function'
+
+    if (isIterable(credentials)) {
+      return credentials
+    }
   }
 }
 
