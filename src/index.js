@@ -6,11 +6,13 @@ import { setCredentials } from './credentials-components';
 
 /** The CORS calls don't work on http so redirect to https if trying to access an insecure domain. */
 function redirectToHttps() {
-  const PRODUCTION_DOMAIN = "pos-example.bluecode.com"
+  const PRODUCTION_DOMAIN = 'pos-example.bluecode.com'
+  const HEROKU_DOMAIN = 'bluecode-pos-example.herokuapp.com'
   
-  if (document.location.protocol === "http:" 
-      && document.location.host === PRODUCTION_DOMAIN) {
-    document.location = "https://" + PRODUCTION_DOMAIN
+  if (document.location.host == HEROKU_DOMAIN 
+      || (document.location.protocol === 'http:' 
+        && document.location.host === PRODUCTION_DOMAIN)) {
+    document.location = 'https://' + PRODUCTION_DOMAIN
   }
 }
 
