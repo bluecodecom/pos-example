@@ -2,7 +2,7 @@
   "name": "pos",
   "version": "0.1.0",
   "private": true,
-  "homepage": "http://bluecode-pos-example.herokuapp.com/",
+  "homepage": "https://pos-example.bluecode.com/",
   "dependencies": {
     "node-sass-chokidar": "^1.2.2",
     "quagga": "^0.12.1",
