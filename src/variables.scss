@@ -4,7 +4,41 @@ $light-background-color: #BBDCC7;
 $inverted-foreground-color: #ffffff;
 $inverted-background-color: #6D917C;
 
-$unit: 8px;
-$font-size-large: 18px;
+$unit: 0.5rem;
 
 $text-color: #58585A;
+
+$font-size-horizontal-breakpoint: 750px;
+$font-size-vertical-breakpoint: 700px;
+
+@mixin large-font-size() {
+  font-size: 18px;
+
+  @media (max-width: $font-size-horizontal-breakpoint), (max-height: $font-size-vertical-breakpoint) { 
+    font-size: 16px;
+  }
+}
+
+@mixin normal-font-size() {
+  font-size: 16px;
+
+  @media (max-width: $font-size-horizontal-breakpoint), (max-height: $font-size-vertical-breakpoint) { 
+    font-size: 14px;
+  }
+}
+
+@mixin small-font-size() {
+  font-size: 14px;
+
+  @media (max-width: $font-size-horizontal-breakpoint), (max-height: $font-size-vertical-breakpoint) { 
+    font-size: 12px;
+  }
+}
+
+@mixin tiny-font-size() {
+  font-size: 12px;
+
+  @media (max-width: $font-size-horizontal-breakpoint), (max-height: $font-size-vertical-breakpoint) { 
+    font-size: 12px;
+  }
+}

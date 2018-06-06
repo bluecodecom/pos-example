@@ -8,9 +8,13 @@
   box-sizing: border-box;
 }
 
+html {
+  @include normal-font-size();
+}
+
 body {
   font-family: Roboto, sans-serif;
-
+  
   #root {
     display: flex;
     justify-content: center;
@@ -19,7 +23,7 @@ body {
 
 .App {
   position: relative;
-  width: 800px;
+  width: 100%;
   min-width: 600px;
   max-width: 750px;
 

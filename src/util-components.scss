@@ -13,7 +13,7 @@ button {
   line-height: 35px;
   padding: 0 1.5rem;
   color: #424242;
-  font-size: 15px;
+  @include normal-font-size();
   font-weight: 600;
   font-family: 'Roboto', sans-serif;
   letter-spacing: .8px;
@@ -96,7 +96,7 @@ button {
   .title {
     background-color: $light-background-color;
     color: $inverted-foreground-color;
-    font-size: $font-size-large;
+    @include large-font-size();
     display: flex;
 
     > div {
@@ -157,7 +157,7 @@ $text-input-top-margin: 32px;
     margin-top: $text-input-top-margin;
   
     input {
-      font-size: 18px;
+      @include large-font-size();
       padding: 10px 10px 10px 5px;
       display: block;
       width: $width;
@@ -171,7 +171,7 @@ $text-input-top-margin: 32px;
   
     label {
       color: #999;
-      font-size: 18px;
+      @include large-font-size();
       font-weight: normal;
       position: absolute;
       pointer-events: none;
@@ -186,7 +186,7 @@ $text-input-top-margin: 32px;
     input:focus ~ label, input:valid ~ label {
       top: -20px;
       left: -1px;
-      font-size: 14px;
+      @include small-font-size();
       color: #5264AE;
     }
   
@@ -275,7 +275,7 @@ $text-input-top-margin: 32px;
 
   .helper {
     margin-top: 8px;
-    font-size: 14px;
+    @include small-font-size();
     color: #999;
   }
 }
