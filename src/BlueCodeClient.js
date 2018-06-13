@@ -8,6 +8,17 @@ import {
   requireAttribute
 } from './client-util.js'
 
+import { 
+  ERROR_TIMEOUT,
+  ERROR_CANCELLED,
+  ERROR_SYSTEM_FAILURE,
+  STATUS_CONNECTING,
+  STATUS_PROCESSING,
+  STATUS_APPROVED,
+  STATUS_CANCELED,
+  STATUS_REFUNDED 
+} from './error-messages'
+
 const TIPPING_DISABLED = 'disabled'
 const TIPPING_ENABLED = 'enabled'
 
@@ -17,13 +28,6 @@ const MAX_RETRIES = 3
 
 export const BASE_URL_PRODUCTION = 'https://merchant-api.bluecode.com/v4'
 export const BASE_URL_SANDBOX = 'https://merchant-api.bluecode.biz/v4'
-
-export const STATUS_CONNECTING = 'connecting'
-export const STATUS_PROCESSING = 'processing'
-export const STATUS_APPROVED = 'approved'
-export const STATUS_DECLINED = 'declined'
-export const STATUS_ERROR = 'error'
-export const STATUS_CANCELED = 'canceled'
 
 /** 
   * @typedef { (message: string, [status]: string) => void } logger
@@ -51,20 +55,21 @@ const NULL_PROGRESS = {
 }
 
 /**
- * Thrown when the server returns a non 200 status code but does return a JSON response.
- * (There are unusual internal error cases when the server fails to return JSON; in these
- * cases, a normal Error is thrown)
+ * Custom error class that includes an error code that can be used to look up an error message.
  */
 class ErrorResponse extends Error {
   /**
-   * @param {{}} response The response the server sent.
+   * @param code A string that serves as error code. 
+   *  Used to look up the appropriate error message to display in the POS.
+   * @param {{}} response The JSON response the server sent, if any.
    * @param {number} retryIndex
    */
-  constructor(message, response, retryIndex) {
+  constructor(message, code, response, retryIndex) {
     super(message)
 
     this.response = response
     this.retryIndex = retryIndex
+    this.code = code
   }
 }
 
@@ -76,6 +81,7 @@ class CanceledError extends Error {
     super('Canceled')
 
     this.wasCanceled = true
+    this.code = ERROR_CANCELLED
   }
 }
 
@@ -90,6 +96,15 @@ export function wait(ms, progress) {
 
     setTimeout(resolve, ms)
   })
+}
+
+/**
+  * Find the error code in a JSON response.
+  * Depending on the call, the error code is either `error_code` or `payment.code`
+  */
+function getErrorCode(jsonResponse) {
+  return jsonResponse.errorCode 
+    || (jsonResponse.payment && jsonResponse.payment.code) || ERROR_SYSTEM_FAILURE
 }
 
 export class BlueCodeClient {
@@ -137,7 +152,7 @@ export class BlueCodeClient {
           }
         }
         else {
-          reject(new Error('Request to ' + endpoint + ' timed out.'))
+          reject(new ErrorResponse('Request to ' + endpoint + ' timed out.', ERROR_TIMEOUT))
         }
       }
 
@@ -186,12 +201,15 @@ export class BlueCodeClient {
               // if there was, include it in the exception so clients get
               // more information
               reject(new ErrorResponse(
-                'Error response ' + response.errorCode,
-                response, 
-                retryIndex))
+                  'Error response ' + response.errorCode,
+                  getErrorCode(response),
+                  response, 
+                  retryIndex))
             }
             else {
-              reject(new Error('Request to ' + endpoint + ' resulted in status ' + xhr.status))
+              reject(
+                new ErrorResponse('Request to ' + endpoint + ' resulted in status ' + xhr.status, 
+                ERROR_SYSTEM_FAILURE))
             }
           }
         }
@@ -203,7 +221,10 @@ export class BlueCodeClient {
       let result = mapKeys(json, snakeCaseToCamelCase)
 
       if (result.result === 'ERROR') {
-        throw new Error('Call to ' + endpoint + ' failed: ' + JSON.stringify(result))
+        throw new ErrorResponse(
+          'Call to ' + endpoint + ' failed: ' + JSON.stringify(result), 
+          getErrorCode(result), 
+          result)
       }
 
       return result
@@ -254,10 +275,10 @@ export class BlueCodeClient {
 
       await this.call('/refund', payload, progress)
 
-      progress.onProgress('Refund successful.', 'SUCCESS')
+      progress.onProgress('Refund successful.', STATUS_REFUNDED)
     }
     catch (e) {
-      progress.onProgress('Refund failed: ' + e.response.errorCode, STATUS_ERROR)
+      progress.onProgress('Refund failed: ' + e.response.errorCode, e.code)
 
       throw e
     }
@@ -294,6 +315,7 @@ export class BlueCodeClient {
         
         throw new ErrorResponse(
           'Payment state ' + payment.state + ', code ' + payment.code,
+          payment.code,
           e.response,
           e.retryIndex
         )
@@ -312,7 +334,7 @@ export class BlueCodeClient {
       let timeElapsed = new Date().getTime() - startTime
 
       if (timeElapsed > paymentStatus.ttl) {
-        throw new Error('Payment timed out.')
+        throw new ErrorResponse('Payment timed out.', ERROR_TIMEOUT)
       }
 
       progress.onProgress('Got response PROCESSING. Will call status endpoint again in ' + 
@@ -327,6 +349,7 @@ export class BlueCodeClient {
       if (response.result !== 'PROCESSING' && (!payment || payment.state !== 'APPROVED')) {
         throw new ErrorResponse(
           'Payment state ' + payment.state + ', code ' + payment.code,
+          payment.code,
           response,
           0)
       }
@@ -367,7 +390,7 @@ export class BlueCodeClient {
       response = await this.payAndWaitForProcessing(paymentOptions, progress)
   
       if (!response.payment) {
-        throw new Error('Unexpected response to payment call.')
+        throw new ErrorResponse('Unexpected response to payment call.', ERROR_SYSTEM_FAILURE, response)
       }
     }
     catch (e) {
@@ -379,12 +402,13 @@ export class BlueCodeClient {
         progress.onProgress('Canceled.', STATUS_CANCELED)        
       }
       else {
-        progress.onProgress('Fatal error: ' + e.message, STATUS_ERROR)
+        progress.onProgress('Fatal error: ' + e.message, e.code)
 
         needsCancel = 
-          !e.response 
-          || !e.response.payment 
-          || e.response.payment.code === 'SYSTEM_FAILURE'
+          // undefined state. better cancel.
+          !e.code 
+          // server crashed. we can't be sure whether the transaction was registered or not.
+          || e.code === ERROR_SYSTEM_FAILURE
       }
 
       if (needsCancel) {
@@ -396,15 +420,15 @@ export class BlueCodeClient {
       throw e
     }
 
-    let isApproved = response.payment.state === 'APPROVED'
+    let isApproved = response.payment.state === STATUS_APPROVED
 
     let message = 'Payment status: ' + response.payment.state + 
       (response.payment.code ? ', code ' + response.payment.code : '')
 
-    progress.onProgress(message, isApproved ? STATUS_APPROVED : STATUS_DECLINED)
+    progress.onProgress(message, response.payment.code || response.payment.state)
 
     if (!isApproved) {
-      throw new Error(message)
+      throw new ErrorResponse(message, response.payment.code, response)
     }
 
     return response.payment

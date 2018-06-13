@@ -9,7 +9,7 @@ function redirectToHttps() {
   const PRODUCTION_DOMAIN = 'pos-example.bluecode.com'
   const HEROKU_DOMAIN = 'bluecode-pos-example.herokuapp.com'
   
-  if (document.location.host == HEROKU_DOMAIN 
+  if (document.location.host === HEROKU_DOMAIN 
       || (document.location.protocol === 'http:' 
         && document.location.host === PRODUCTION_DOMAIN)) {
     document.location = 'https://' + PRODUCTION_DOMAIN

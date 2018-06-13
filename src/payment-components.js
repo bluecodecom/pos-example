@@ -1,8 +1,9 @@
 import React, { Component } from 'react'
 import './payment-components.css'
 import { Card, Button, TextInput } from './util-components'
-import { STATUS_PROCESSING, STATUS_CONNECTING } from './BlueCodeClient';
+import { STATUS_PROCESSING, STATUS_CONNECTING } from './error-messages';
 import { BarcodeScanner, ScanBarcodeButton, ALIPAY_REGEX, BLUE_CODE_REGEX } from './BarcodeScanner';
+import { MESSAGES } from './error-messages' 
 
 /** 
  * These are the components involved in the payment workflow
@@ -168,7 +169,7 @@ export function StatusDialog(props) {
     || props.status === STATUS_PROCESSING
 
   return <Card title={ props.title } className='status-dialog'>
-    <Spinner status={ isStillWorking ? '' : props.status } />
+    <Spinner status={ isStillWorking ? '' : MESSAGES.en[props.status] || props.status } />
     <LogPanel logEntries={ props.logEntries } />
     <div className='button-bar'>
       {

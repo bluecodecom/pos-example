@@ -93,14 +93,12 @@ export class CredentialsDialog extends Component {
         .catch(e => console.error(e))
     }
     catch (e) {
-      let response = e.response || {}
-
-      if (response.errorCode === 'BRANCH_NOT_FOUND') {
+      if (e.code === 'BRANCH_NOT_FOUND') {
         this.setState({ error: 'Wrong branch. Check developer portal for right value.'})
         return false
       }
 
-      if (response.errorCode === 'UNAUTHORIZED') {
+      if (e.code === 'UNAUTHORIZED') {
         this.setState({ error: 'Invalid credentials. Sandbox responds with UNAUTHORIZED.'})
         return false
       }

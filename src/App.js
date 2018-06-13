@@ -226,7 +226,7 @@ class App extends Component {
     })
 
     let updatePaymentStatus = (callback) => {
-      setTimeout(() => {    
+      setTimeout(() => { 
         this.setState({
           paymentStatus: callback(this.state.paymentStatus)
         })
@@ -234,6 +234,9 @@ class App extends Component {
     }
 
     return {
+      /**
+       * @param status One of the STATUS_ or ERROR_ constants defined in error-messages.js.
+       */
       onProgress: (message, status) => 
         updatePaymentStatus(paymentStatus => ({
           ...paymentStatus,
