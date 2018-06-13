@@ -24,13 +24,15 @@ export const ERROR_LIMIT_EXCEEDED = 'LIMIT_EXCEEDED'
 export const ERROR_TRANSACTION_NOT_FOUND = 'TRANSACTION_NOT_FOUND' 
 export const ERROR_AMOUNT_TOO_HIGH = 'AMOUNT_TOO_HIGH'
 export const ERROR_UNAUTHORIZED = 'UNAUTHORIZED'
+export const ERROR_MERCHANT_TX_ID_NOT_UNIQUE = 'MERCHANT_TX_ID_NOT_UNIQUE'
 
 export const MESSAGES = {
   'en': {
     [ERROR_TIMEOUT]: 'Could not reach server. Internet connection might not work. Please try again.',
     [ERROR_CANCELLED]: 'Transaction cancelled.',
     [ERROR_SYSTEM_FAILURE]: 'Unexpected technical error. Please try again. Contact support if the problem persists.',
-    [ERROR_INVALID_PARAMETER]: 'Fatal technical error ("INVALID_PARAMETER"). Please contact support.',
+    [ERROR_INVALID_PARAMETER]: 'Fatal technical error ("invalid parameter"). Please contact support.',
+    [ERROR_MERCHANT_TX_ID_NOT_UNIQUE]: 'Internal error ("transaction ID not unique"). Please try again. Contact support if the problem persists.',
     [ERROR_ISSUER_NOT_SUPPORTED]: 'The customer\'s Blue Code account is not supported.',
     [ERROR_INVALID_BARCODE]: 'Invalid barcode. Ask the customer to generate a new code and try again.',
     [ERROR_INVALID_BRANCH]: 'Wrong configuration (invalid branch ID). Please contact an administrator.',
@@ -50,8 +52,9 @@ export const MESSAGES = {
   'de': {
     [ERROR_TIMEOUT]: 'Server konnte nicht erreicht werden. Eventuell funktioniert die Internetverbindung nicht. Versuchen Sie es bitte erneut.',
     [ERROR_CANCELLED]: 'Vorgang abgebrochen. Die Transaktion wurde nicht durchgeführt.',
-    [ERROR_SYSTEM_FAILURE]: 'Systemfehler. Versuchen Sie es bitte später erneut. Bitte kontaktieren Sie die Service-Hotline wenn der Fehler nicht vorübergehend ist.',
-    [ERROR_INVALID_PARAMETER]: 'Technischer Fehler ("INVALID_PARAMETER"). Bitte kontaktieren Sie die Service-Hotline.',
+    [ERROR_SYSTEM_FAILURE]: 'Systemfehler. Versuchen Sie es bitte später erneut. Bitte kontaktieren Sie die Service-Hotline wenn der Fehler besteht.',
+    [ERROR_INVALID_PARAMETER]: 'Technischer Fehler ("invalid parameter"). Bitte kontaktieren Sie die Service-Hotline.',
+    [ERROR_MERCHANT_TX_ID_NOT_UNIQUE]: 'Technischer Fehler ("transaction ID not unique"). Bitte versuchen Sie es erneut. Kontaktieren Sie die Service-Hotline wenn der Fehler besteht.',
     [ERROR_ISSUER_NOT_SUPPORTED]: 'Dieses Blue Code-Konto wird leider nicht unterstützt.',
     [ERROR_INVALID_BARCODE]: 'Falscher Strichcode. Bitten Sie den Kunden einen neuen Code zu generieren und versuchen Sie es erneut.',
     [ERROR_INVALID_BRANCH]: 'Falsche Kassenkonfiguration (Blue Code Branch ID ist ungültig). Bitte einen Administrator kontaktieren.',
