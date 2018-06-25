@@ -407,6 +407,8 @@ export class BlueCodeClient {
         needsCancel = 
           // undefined state. better cancel.
           !e.code 
+          // we can't be sure if the server received the call or not. cancel
+          || e.code === ERROR_TIMEOUT
           // server crashed. we can't be sure whether the transaction was registered or not.
           || e.code === ERROR_SYSTEM_FAILURE
       }
