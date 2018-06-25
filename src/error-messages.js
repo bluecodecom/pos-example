@@ -21,6 +21,7 @@ export const ERROR_FRAUD_DETECTED = 'FRAUD_DETECTED'
 export const ERROR_INSUFFICIENT_FUNDS = 'INSUFFICIENT_FUNDS'
 export const ERROR_INVALID_STATE = 'INVALID_STATE'
 export const ERROR_LIMIT_EXCEEDED = 'LIMIT_EXCEEDED'
+export const ERROR_CANCELLED_BY_USER = 'CANCELLED_BY_USER'
 export const ERROR_TRANSACTION_NOT_FOUND = 'TRANSACTION_NOT_FOUND' 
 export const ERROR_AMOUNT_TOO_HIGH = 'AMOUNT_TOO_HIGH'
 export const ERROR_UNAUTHORIZED = 'UNAUTHORIZED'
@@ -40,6 +41,7 @@ export const MESSAGES = {
     [ERROR_INSUFFICIENT_FUNDS]: 'Payment was declined. Use a different form of payment.',
     [ERROR_INVALID_STATE]: 'Payment was declined. Use a different form of payment.',
     [ERROR_LIMIT_EXCEEDED]: 'Payment was declined. Use a different form of payment.',
+    [ERROR_CANCELLED_BY_USER]: 'The customer canceled the payment in the app.',
     [ERROR_TRANSACTION_NOT_FOUND]: 'Unknown transaction. Could not refund.',
     [ERROR_AMOUNT_TOO_HIGH]: 'Amount to refund is too high. Leave amount empty to do a complete refund.',
     [ERROR_UNAUTHORIZED]: 'Wrong configuration (username or password is invalid). Please contact an administrator.',
@@ -62,6 +64,7 @@ export const MESSAGES = {
     [ERROR_INSUFFICIENT_FUNDS]: 'Zahlung wurde abgelehnt. Bitte anderes Zahlungsmittel benutzen.',
     [ERROR_INVALID_STATE]: 'Zahlung wurde abgelehnt. Bitte anderes Zahlungsmittel benutzen.',
     [ERROR_LIMIT_EXCEEDED]: 'Zahlung wurde abgelehnt. Bitte anderes Zahlungsmittel benutzen.',
+    [ERROR_CANCELLED_BY_USER]: 'Der Kunde hat die Bezahlung in der App abgelehnt.',
     [ERROR_TRANSACTION_NOT_FOUND]: 'Unbekannte Transaktion. Rückerstattung wurde nicht durchgeführt.',
     [ERROR_AMOUNT_TOO_HIGH]: 'Rückerstattungsbetrag ist zu hoch. Geben Sie keinen Betrag an um die Transaktion vollständig zu rückerstatten.',
     [ERROR_UNAUTHORIZED]: 'Falsche Kassenkonfiguration (Benutzername oder Passwort ist ungültig). Bitte einen Administrator kontaktieren.',
