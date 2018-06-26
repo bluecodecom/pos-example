@@ -1,27 +1,11 @@
 import React, { Component } from 'react'
 import './credentials-components.css'
-import { TextInput, Card, Button } from './util-components';
-import { BlueCodeClient, BASE_URL_SANDBOX } from './BlueCodeClient';
-import { generateMerchantTxId } from './client-util';
+import { TextInput, Card, Button } from './util-components'
+import { BlueCodeClient, BASE_URL_SANDBOX } from './BlueCodeClient'
+import { generateMerchantTxId } from './client-util'
+import { getLocalStorage } from './local-storage'
 
 const CREDENTIALS_KEY = 'credentials'
-
-let localStorageFallback = {}
-
-function getLocalStorage() {
-  try {
-    return localStorage
-  }
-  catch (e) {
-    console.error(e)
-
-    // fallback, e.g. when third-party cookies are denied and running in an iframe
-    return {
-      getItem: (key) => localStorageFallback[key],
-      setItem: (key, value) => localStorageFallback[key] = value
-    }
-  }
-}
 
 /**
  * @param {String} username 

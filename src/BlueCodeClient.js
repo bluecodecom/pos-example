@@ -10,6 +10,7 @@ import {
 
 import { 
   ERROR_TIMEOUT,
+  ERROR_SERVICE_UNAVAILABLE,
   ERROR_CANCELLED,
   ERROR_SYSTEM_FAILURE,
   STATUS_CONNECTING,
@@ -19,45 +20,29 @@ import {
   STATUS_REFUNDED 
 } from './error-messages'
 
-const TIPPING_DISABLED = 'disabled'
-const TIPPING_ENABLED = 'enabled'
+import { consoleProgress } from './console-progress'
+// seems to be the only way to get the jsdoc Progress class declaration into scope
+import * as progress from './console-progress' // eslint-disable-line no-unused-vars
+
+import { NonCanceledTimeouts, createNonCanceledTimeoutError } from './NonCanceledTimeouts'
 
 const DEFAULT_TIMEOUT_MS = 10000
-const BACKOFF_TIME_MS = 2000
+export const BACKOFF_TIME_MS = 2000
 const MAX_RETRIES = 3
 
 export const BASE_URL_PRODUCTION = 'https://merchant-api.bluecode.com/v4'
 export const BASE_URL_SANDBOX = 'https://merchant-api.bluecode.biz/v4'
 
-/** 
-  * @typedef { (message: string, [status]: string) => void } logger
-  * 
-  * The Progress object can optionally be sent to any endpoint 
-  * to receive status updates during the call and to be able to
-  * cancel the call.
-  * @typedef { Object } progress
-  * @property { logger } onProgress - A logger instance that gets 
-  *   called with status updates on the call.
-  * @property { (() => Promise) => void } onCancellable -
-  *   A callback that will receive a cancel method. Call the cancel
-  *   method to abort the transaction. Note that the method will
-  *   be called multiple times during the transaction; always call
-  *   cancel on the latest instance.
-  * 
-  * @type { logger }
-  */
-const NULL_LOGGER = (message, status) => {}
+const ENDPOINT_CANCEL = '/cancel'
+const ENDPOINT_STATUS = '/status'
+const ENDPOINT_PAYMENT = '/payment'
+const ENDPOINT_REFUND = '/refund'
 
-/** @type {progress} */
-const NULL_PROGRESS = {
-  onProgress: NULL_LOGGER,
-  onCancellable: (cancel) => {}
-}
 
 /**
  * Custom error class that includes an error code that can be used to look up an error message.
  */
-class ErrorResponse extends Error {
+export class ErrorResponse extends Error {
   /**
    * @param code A string that serves as error code. 
    *  Used to look up the appropriate error message to display in the POS.
@@ -74,7 +59,7 @@ class ErrorResponse extends Error {
 }
 
 /**
- * Thrown when a transaction was cancelled using the {@link progress} object.
+ * Thrown when a transaction was cancelled using the {@link progress.Progress} object.
  */
 class CanceledError extends Error {
   constructor() {
@@ -88,7 +73,7 @@ class CanceledError extends Error {
 /**
  * Waits for a specified number of milliseconds.
  * @param {number} ms 
- * @param {progress} progress 
+ * @param {progress.Progress} progress 
  */
 export function wait(ms, progress) {
   return new Promise((resolve, reject) => {
@@ -107,42 +92,50 @@ function getErrorCode(jsonResponse) {
     || (jsonResponse.payment && jsonResponse.payment.code) || ERROR_SYSTEM_FAILURE
 }
 
-export class BlueCodeClient {
+export class BlueCodeClient {  
   constructor(username, password, baseUrl) {
     if (!username || !password) {
       throw new Error('Missing credentials.')
     }
-
+    
     if (!baseUrl) {
       throw new Error('Missing base URL.')
     }
-
+    
     this.username = username
     this.password = password
     this.baseUrl = baseUrl
+
+    this.nonCanceledTimeouts = new NonCanceledTimeouts(this)
   }
 
   /**
-   * Perform an API call.
-   * @param {string} endpoint Should start with a slash.
-   * @param {progress} progress
-   * @param {*} payload POST payload. Will be converted into JSON (including converting camel case to snake case)
-   * @param {number} [retryIndex] Unset for the first call. 1 on the first retry etc.
-   */
+    * Perform an API call.
+    * @param {string} endpoint Should start with a slash.
+    * @param {progress.Progress} progress
+    * @param {*} payload POST payload. Will be converted into JSON (including converting camel case to snake case)
+    * @param {number} [retryIndex] Unset for the first call. 1 on the first retry etc.
+    */
   call(endpoint, payload, progress, retryIndex) {
     retryIndex = retryIndex || 0
-    progress = progress || NULL_PROGRESS
+    progress = progress || consoleProgress
 
     let timeoutMs = DEFAULT_TIMEOUT_MS
 
     progress.onProgress('Calling ' + endpoint + '...')
 
     return new Promise((resolve, reject) => {
-      let retry = async () => {
+      if (endpoint !== ENDPOINT_CANCEL && this.nonCanceledTimeouts.isStillCanceling()) {
+        reject(createNonCanceledTimeoutError())
+
+        return
+      }
+
+      let retry = async (errorCode) => {
         if (retryIndex < MAX_RETRIES) {
           await wait(BACKOFF_TIME_MS, progress)
 
-          progress.onProgress('Timeout calling ' + endpoint + '. Retrying...')
+          progress.onProgress(`Could not reach ${endpoint} (${errorCode}). Retrying...`)
 
           try {
             resolve(await this.call(endpoint, payload, progress, retryIndex+1))
@@ -152,7 +145,7 @@ export class BlueCodeClient {
           }
         }
         else {
-          reject(new ErrorResponse('Request to ' + endpoint + ' timed out.', ERROR_TIMEOUT))
+          reject(new ErrorResponse('Could not reach ' + endpoint + '.', errorCode))
         }
       }
 
@@ -183,14 +176,15 @@ export class BlueCodeClient {
           if (xhr.status >= 200 && xhr.status < 300) {
             resolve(xhr.response)
           }
-          else if (xhr.status === 0) {
-            // status 0 means either a timeout, offline or a cancel.
-            if (didCancel) {
-              reject(new CanceledError())
-            }
-            else {
-              retry()
-            }
+          else if (didCancel) {
+            reject(new CanceledError())
+          }
+          else if (
+              // status 0 means either a timeout, offline or a cancel.
+              xhr.status === 0 
+              // 503 means the service is overloaded; retry
+              || xhr.status === 503) {
+            retry(xhr.status === 503 ? ERROR_SERVICE_UNAVAILABLE : ERROR_TIMEOUT)
           }
           else {
             // test if there was a JSON error response from the server
@@ -207,9 +201,9 @@ export class BlueCodeClient {
                   retryIndex))
             }
             else {
-              reject(
-                new ErrorResponse('Request to ' + endpoint + ' resulted in status ' + xhr.status, 
-                ERROR_SYSTEM_FAILURE))
+              reject(new ErrorResponse(
+                  'Request to ' + endpoint + ' resulted in status ' + xhr.status, 
+                  ERROR_SYSTEM_FAILURE))
             }
           }
         }
@@ -235,23 +229,23 @@ export class BlueCodeClient {
    * Get the payment status on a transaction.
    * @async
    * @param {string} merchantTxId 
-   * @param {progress} [progress]
+   * @param {progress.Progress} [progress]
    * @return {statusResponse} 
   */
   status(merchantTxId, progress) {
-    return this.call('/status', { merchantTxId }, progress)
+    return this.call(ENDPOINT_STATUS, { merchantTxId }, progress)
   }
 
   /**
    * Cancel a transaction.
    * @async
    * @param {string} merchantTxId 
-   * @param {progress} [progress]
+   * @param {progress.Progress} [progress]
    * @return {statusResponse} 
   */
- cancel(merchantTxId, progress) {
-  return this.call('/cancel', { merchantTxId }, progress)
-}
+  cancel(merchantTxId, progress) {
+    return this.call(ENDPOINT_CANCEL, { merchantTxId }, progress)
+  }
 
   /**
    * Refund a transaction.
@@ -259,7 +253,7 @@ export class BlueCodeClient {
    * @param {string} acquirerTxId 
    * @param {number} [amount]
    * @param {string} [reason]
-   * @param {progress} [progress]
+   * @param {progress.Progress} [progress]
    * @return {statusResponse} 
   */
   async refund(acquirerTxId, amount, reason, progress) {
@@ -273,7 +267,7 @@ export class BlueCodeClient {
         payload = { amount , ...payload }
       }
 
-      await this.call('/refund', payload, progress)
+      await this.call(ENDPOINT_REFUND, payload, progress)
 
       progress.onProgress('Refund successful.', STATUS_REFUNDED)
     }
@@ -287,16 +281,16 @@ export class BlueCodeClient {
   /**
    * Utility for the payment call. Handles retries but no other error handling.
    * @param {paymentOptions} paymentOptions 
-   * @param {progress} [progress]
+   * @param {progress.Progress} [progress]
    * @return {Promise<statusResponse>}
    */
   async payAndWaitForProcessing(paymentOptions, progress) {
-    progress = progress || NULL_PROGRESS
+    progress = progress || consoleProgress
 
     let response
     
     try {
-      response = await this.call('/payment', paymentOptions, progress)
+      response = await this.call(ENDPOINT_PAYMENT, paymentOptions, progress)
     }
     catch (e) {
       // we will receive this error if the first transaction was in fact processed, 
@@ -361,11 +355,11 @@ export class BlueCodeClient {
   /**
    * Perform a payment.
    * @param {paymentOptions} paymentOptions 
-   * @param {progress} [progress]
+   * @param {progress.Progress} [progress]
    * @return {Promise<statusResponse>}
    */
   async pay(paymentOptions, progress) {
-    progress = progress || NULL_PROGRESS
+    progress = progress || consoleProgress
 
     /** @type {paymentOptions} */
     let defaults = {
@@ -414,9 +408,7 @@ export class BlueCodeClient {
       }
 
       if (needsCancel) {
-        this.cancel(paymentOptions.merchantTxId, progress)
-        .then(() => progress.onProgress('Cancel successful.'))
-        .catch(e => console.error('Unable to cancel payment ' + paymentOptions.merchantTxId + ': ' + e.message, e))
+        this.nonCanceledTimeouts.add(paymentOptions.merchantTxId, progress)
       }
 
       throw e

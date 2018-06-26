@@ -7,6 +7,9 @@ import { ModalOverlay, Button } from './util-components'
 import { BlueCodeClient, BASE_URL_SANDBOX } from './BlueCodeClient'
 import { CredentialsDialog, getCredentials } from './credentials-components';
 import { RefundDialog } from './refund-components';
+import { MESSAGES, ERROR_NON_CANCELED_TIMEOUTS } from './error-messages' 
+import * as progress from './console-progress'  // eslint-disable-line no-unused-vars
+import { Exception } from 'handlebars';
 
 const CENTS_PER_EURO = 100
 
@@ -25,7 +28,6 @@ function toMinorCurrencyUnit(amountInMajorUnit) {
  @property { string } status 
  @property { () => Promise } cancel
  */
-
 class App extends Component {
   constructor() {
     super()
@@ -44,6 +46,12 @@ class App extends Component {
       // and we show the payment status dialog
       paymentStatus: null, 
       lastTransactionAcquirerTxId: null
+    }
+  }
+
+  componentDidMount() {
+    if (getCredentials()) {
+      this.getClient().nonCanceledTimeouts.retryPersisted()
     }
   }
 
@@ -151,9 +159,18 @@ class App extends Component {
       })
     
     let pay = () => {
-      this.setState({ 
-        isPaymentDialogOpen: true 
-      })
+      // there are still transactions that timed out and where were 
+      // are unable to call cancel because that call also times out.
+      // disallow transactions to prevent long queues of cancelations
+      // from building up.
+      if (this.getClient().nonCanceledTimeouts.isStillCanceling()) {
+        alert(MESSAGES.en[ERROR_NON_CANCELED_TIMEOUTS])
+      }
+      else {
+        this.setState({ 
+          isPaymentDialogOpen: true 
+        })
+      }
     }
 
     let refund = () => {
@@ -216,16 +233,25 @@ class App extends Component {
     )
   }
 
-  /** @returns {progress} */
-  getProgressLogger(operationName) {
-    this.setState({ 
-      paymentStatus: { 
-        logEntries: [],
-        operationName 
-      } 
-    })
+  /** @returns {progress.Progress} */
+  getProgress(operationName) {
+    let id = new Date().getTime()
+
+    let paymentStatus = {
+      logEntries: [],
+      id,
+      operationName 
+    }
+
+    this.setState({ paymentStatus })
 
     let updatePaymentStatus = (callback) => {
+      // the progress window has already been closed (paymentStatus is null)
+      // or a new, different progress window has been opened (paymentStatus.id is a different id)
+      if (!this.state.paymentStatus || this.state.paymentStatus.id !== id) {
+        return
+      }
+
       setTimeout(() => { 
         this.setState({
           paymentStatus: callback(this.state.paymentStatus)
@@ -252,7 +278,13 @@ class App extends Component {
   }
 
   getClient() {
-    let [username, password] = getCredentials()
+    let credentials = getCredentials()
+
+    if (!credentials) {
+      throw new Exception('No credentials.')
+    }
+
+    let [username, password] = credentials
 
     let baseUrl = this.props.baseUrl || BASE_URL_SANDBOX
 
@@ -267,7 +299,7 @@ class App extends Component {
         acquirerTransactionId,
         amount,
         null,
-        this.getProgressLogger('Refund')
+        this.getProgress('Refund')
       )
     }
     catch (e) {
@@ -276,7 +308,7 @@ class App extends Component {
   }
 
   async pay(barcode) {
-    let [username, password, branch] = getCredentials()
+    let [username, password, branch] = getCredentials() // eslint-disable-line no-unused-vars
 
     let client = this.getClient()
 
@@ -287,7 +319,7 @@ class App extends Component {
           branchExtId: branch,
           requestedAmount: toMinorCurrencyUnit(this.state.order.getTotal())
         },
-        this.getProgressLogger('Payment')
+        this.getProgress('Payment')
       )
 
       this.setState({
