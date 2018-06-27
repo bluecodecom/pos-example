@@ -1,9 +1,9 @@
 import React, { Component } from 'react'
 import './payment-components.css'
 import { Card, Button, TextInput } from './util-components'
-import { STATUS_PROCESSING, STATUS_CONNECTING } from './error-messages';
+import { STATUS_PROCESSING, STATUS_CONNECTING } from './util/error-messages';
 import { BarcodeScanner, ScanBarcodeButton, ALIPAY_REGEX, BLUE_CODE_REGEX } from './BarcodeScanner';
-import { MESSAGES } from './error-messages' 
+import { MESSAGES } from './util/error-messages' 
 
 /** 
  * These are the components involved in the payment workflow

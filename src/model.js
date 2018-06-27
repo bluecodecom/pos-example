@@ -1,4 +1,4 @@
-import './typedefs'
+import './client/typedefs'
 
 const VAT_RATE = 0.17
 

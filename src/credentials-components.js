@@ -1,9 +1,9 @@
 import React, { Component } from 'react'
 import './credentials-components.css'
 import { TextInput, Card, Button } from './util-components'
-import { BlueCodeClient, BASE_URL_SANDBOX } from './BlueCodeClient'
-import { generateMerchantTxId } from './client-util'
-import { getLocalStorage } from './local-storage'
+import { BlueCodeClient, BASE_URL_SANDBOX } from './client/BlueCodeClient'
+import { generateMerchantTxId } from './client/client-util'
+import { getLocalStorage } from './util/local-storage'
 
 const CREDENTIALS_KEY = 'credentials'
 

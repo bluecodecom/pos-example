@@ -1,10 +1,13 @@
-import { getLocalStorage } from './local-storage'
-import { ERROR_NON_CANCELED_TIMEOUTS, ERROR_TIMEOUT, ERROR_SERVICE_UNAVAILABLE } from './error-messages'
-import { BACKOFF_TIME_MS, BlueCodeClient, ErrorResponse } from './BlueCodeClient' // eslint-disable-line no-unused-vars
+import { getLocalStorage } from '../util/local-storage'
+import { ERROR_NON_CANCELED_TIMEOUTS, ERROR_TIMEOUT, ERROR_SERVICE_UNAVAILABLE } from '../util/error-messages'
+import { ENDPOINT_CANCEL } from './BlueCodeClient'
+import { ErrorResponse } from './ErrorResponse' // eslint-disable-line no-unused-vars
+import { BACKOFF_TIME_MS } from './caller' // eslint-disable-line no-unused-vars
 
 import { consoleProgress } from './console-progress'
 // seems to be the only way to get the jsdoc Progress class declaration into scope
 import * as progress from './console-progress' // eslint-disable-line no-unused-vars
+import * as caller from './caller' // eslint-disable-line no-unused-vars
 
 const TIMED_OUT_TRANSACTION_KEY = 'timedOutTransaction'
 
@@ -24,10 +27,10 @@ const TIMED_OUT_TRANSACTION_KEY = 'timedOutTransaction'
   */
 export class NonCanceledTimeouts {
   /**
-   * @param {BlueCodeClient} blueCodeClient 
+   * @param { function(merchantTxId: string, progress: progress.Progress) => Promise<void> } cancel 
    */
-  constructor(blueCodeClient) {
-    this.blueCodeClient = blueCodeClient
+  constructor(cancel) {
+    this.cancel = cancel
   }
 
   /**
@@ -48,7 +51,7 @@ export class NonCanceledTimeouts {
     * No new calls should be attempted while this method returns true.
     */
   isStillCanceling() {
-    return getLocalStorage().getItem(TIMED_OUT_TRANSACTION_KEY) !== null
+    return getLocalStorage().getItem(TIMED_OUT_TRANSACTION_KEY) != null
   }
 
   /**
@@ -56,10 +59,11 @@ export class NonCanceledTimeouts {
    * @param {progress.Progress} [progress]
    */
   add(merchantTxId, progress) {
+    progress = progress || consoleProgress
     let previousMerchantTxId = this.getMerchantTxIdToCancel()
 
-    if (previousMerchantTxId !== null && previousMerchantTxId !== merchantTxId) {
-      console.error('Added a non-canceled transaction while one already existed.')
+    if (previousMerchantTxId != null && previousMerchantTxId !== merchantTxId) {
+      console.error(new Error('Added a non-canceled transaction while one already existed.').stack)
     }
 
     this.setMerchantTxIdToCancel(merchantTxId)
@@ -93,7 +97,7 @@ export class NonCanceledTimeouts {
     progress = progress || consoleProgress
 
     // run the cancelation in the background, so no await
-    this.blueCodeClient.cancel(merchantTxId, progress)
+    this.cancel(merchantTxId, progress)
     .then(() => {
         progress.onProgress('Cancel of ' + merchantTxId + ' successful.')
 
@@ -125,3 +129,19 @@ export function createNonCanceledTimeoutError() {
     ERROR_NON_CANCELED_TIMEOUTS)
 }
 
+/**
+  * Creates a caller that blocks any calls attempted while there are still pending cancels. 
+  * @param { caller.Caller } delegateCaller
+  * @param { NonCanceledTimeouts } nonCanceledTimeouts
+  * @returns caller.Caller
+  */
+ export function createCallerBlockingCallsWhileStillCanceling(delegateCaller, nonCanceledTimeouts) {
+  return (endpoint, payload, progress) => {
+    if (endpoint !== ENDPOINT_CANCEL && nonCanceledTimeouts.isStillCanceling()) {
+      return Promise.reject(createNonCanceledTimeoutError())
+    }
+    else {
+      return delegateCaller(endpoint, payload, progress)
+    }
+  }
+}

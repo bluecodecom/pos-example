@@ -44,7 +44,7 @@ For full documentation of the development flow, see [Create React App](https://g
 
 # Reusing
 
-All the code relating to the API integration can be found in the class [BlueCodeClient](https://github.com/bluecodecom/pos-example/blob/master/src/BlueCodeClient.js). 
+All the code relating to the API integration can be found in the class [BlueCodeClient](https://github.com/bluecodecom/pos-example/blob/master/src/client/BlueCodeClient.js). 
 
 The API does not have any dependencies on any other external frameworks, so it should be easily possible to base new implementations on it.
 

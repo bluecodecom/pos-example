@@ -4,11 +4,11 @@ import { Order } from './model'
 import { OrderCard, ProductSelectionCard } from './ordering-components'
 import { PaymentDialog, StatusDialog } from './payment-components'
 import { ModalOverlay, Button } from './util-components'
-import { BlueCodeClient, BASE_URL_SANDBOX } from './BlueCodeClient'
+import { BlueCodeClient, BASE_URL_SANDBOX } from './client/BlueCodeClient'
 import { CredentialsDialog, getCredentials } from './credentials-components';
 import { RefundDialog } from './refund-components';
-import { MESSAGES, ERROR_NON_CANCELED_TIMEOUTS } from './error-messages' 
-import * as progress from './console-progress'  // eslint-disable-line no-unused-vars
+import { MESSAGES, ERROR_NON_CANCELED_TIMEOUTS } from './util/error-messages' 
+import * as progress from './client/console-progress'  // eslint-disable-line no-unused-vars
 import { Exception } from 'handlebars';
 
 const CENTS_PER_EURO = 100
