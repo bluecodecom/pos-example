@@ -12,7 +12,7 @@ it('retries on timeout', async () => {
 
   let retryingCaller = createRetryingCaller(mockCaller)
  
-  expect.assertions(2);
+  expect.assertions(2)
 
   await expect(retryingCaller('/any', {}, nullProgress)).rejects.toBeInstanceOf(ErrorResponse)
 
@@ -37,7 +37,7 @@ it('recovers from a single failure', async () => {
 
   let retryingCaller = createRetryingCaller(mockCaller)
  
-  expect.assertions(2);
+  expect.assertions(2)
 
   await expect(retryingCaller('/any', {})).resolves.toEqual({})
 
@@ -51,7 +51,7 @@ it('does not retry on system failure', async () => {
 
   let retryingCaller = createRetryingCaller(mockCaller)
  
-  expect.assertions(2);
+  expect.assertions(2)
 
   await expect(retryingCaller('/any', {})).rejects.toBeInstanceOf(ErrorResponse)
 

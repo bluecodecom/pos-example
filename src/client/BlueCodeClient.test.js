@@ -32,7 +32,7 @@ it('handles payments with immediate approval', () => {
 
   let client = new BlueCodeClient('foo', 'bar', BASE_URL_PRODUCTION, caller)
 
-  expect.assertions(1);
+  expect.assertions(1)
 
   return expect(
       client.pay(
@@ -52,7 +52,7 @@ it('handles declined payments', () => {
 
   let client = new BlueCodeClient('foo', 'bar', BASE_URL_PRODUCTION, caller)
 
-  expect.assertions(1);
+  expect.assertions(1)
 
   return expect(
       client.pay(
@@ -80,11 +80,11 @@ it('handles payments with PROCESSING response', () => {
   let callCount = 0
   
   let caller = jest.fn().mockImplementation(async () => 
-  (callCount++ == 0 ? PROCESSING_RESPONSE : APPROVED_RESPONSE))
+    (callCount++ == 0 ? PROCESSING_RESPONSE : APPROVED_RESPONSE))
   
   let client = new BlueCodeClient('foo', 'bar', BASE_URL_PRODUCTION, caller)
 
-  expect.assertions(1);
+  expect.assertions(1)
 
   return expect(
       client.pay(
@@ -114,7 +114,7 @@ it('cancels payments failing due to SYSTEM_FAILURE', async () => {
   const merchantTxId = 'abcd'
   let client = new BlueCodeClient('foo', 'bar', BASE_URL_PRODUCTION, caller)
 
-  expect.assertions(2);
+  expect.assertions(2)
 
   // expect the payment call to fail
   await expect(
