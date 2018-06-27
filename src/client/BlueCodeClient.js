@@ -268,7 +268,6 @@ export class BlueCodeClient {
       throw e
     }
 
-    
     let paymentState = response.payment && response.payment.state || '<missing>'
     let paymentCode = response.payment && response.payment.code
 

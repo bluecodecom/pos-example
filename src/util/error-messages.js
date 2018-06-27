@@ -6,6 +6,7 @@ export const STATUS_PROCESSING = 'PROCESSING'
 export const STATUS_APPROVED = 'APPROVED'
 export const STATUS_CANCELED = 'CANCELED'
 export const STATUS_REFUNDED = 'REFUNDED'
+export const STATUS_DECLINED = 'DECLINED'
 
 // client-side error codes
 export const ERROR_TIMEOUT = 'TIMEOUT'

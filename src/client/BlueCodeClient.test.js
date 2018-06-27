@@ -1,13 +1,13 @@
 import { BlueCodeClient, BASE_URL_PRODUCTION, ENDPOINT_CANCEL } from "./BlueCodeClient";
 import { ErrorResponse } from "./ErrorResponse";
-import { ERROR_SYSTEM_FAILURE } from "../util/error-messages";
+import { ERROR_SYSTEM_FAILURE, ERROR_LIMIT_EXCEEDED, STATUS_APPROVED, STATUS_DECLINED } from "../util/error-messages";
 import { wait } from "./wait";
 import { nullProgress } from "./console-progress";
 
 const APPROVED_RESPONSE = {
   result: "OK",
   payment: {
-    state: "APPROVED",
+    state: STATUS_APPROVED,
     merchant_tx_id: "tx-1234",
     acquirer_tx_id: "ABCDEF123400001111222",
     scheme: "BLUE_CODE",
@@ -18,6 +18,15 @@ const APPROVED_RESPONSE = {
   }
 }
 
+const DECLINED_RESPONSE = {
+  result: "OK",
+  payment: {
+    state: STATUS_DECLINED,
+    code: ERROR_LIMIT_EXCEEDED,
+    acquirer_tx_id: "ABCDEF123400001111222"
+  }
+}  
+
 it('handles payments with immediate approval', () => {
   let caller = jest.fn().mockImplementation(async () => APPROVED_RESPONSE)
 
@@ -26,14 +35,36 @@ it('handles payments with immediate approval', () => {
   expect.assertions(1);
 
   return expect(
-      client.pay({ 
+      client.pay(
+        { 
           branchExtId: 'foo', 
           barcode: '1234', 
           requestedAmount: 100 
-      }, nullProgress)
+        }, 
+        nullProgress)
     )
     .resolves
     .toEqual(APPROVED_RESPONSE.payment)
+})
+
+it('handles declined payments', () => {
+  let caller = jest.fn().mockImplementation(async () => DECLINED_RESPONSE)
+
+  let client = new BlueCodeClient('foo', 'bar', BASE_URL_PRODUCTION, caller)
+
+  expect.assertions(1);
+
+  return expect(
+      client.pay(
+        { 
+          branchExtId: 'foo', 
+          barcode: '1234', 
+          requestedAmount: 100 
+        }, 
+        nullProgress)
+    )
+    .rejects
+    .toEqual(new ErrorResponse(`Payment state: ${STATUS_DECLINED}, code ${ERROR_LIMIT_EXCEEDED}`, 1))
 })
 
 it('handles payments with PROCESSING response', () => {
@@ -56,11 +87,13 @@ it('handles payments with PROCESSING response', () => {
   expect.assertions(1);
 
   return expect(
-      client.pay({ 
-        branchExtId: 'foo', 
-        barcode: '1234', 
-        requestedAmount: 100 
-      }, nullProgress)
+      client.pay(
+        { 
+          branchExtId: 'foo', 
+          barcode: '1234', 
+          requestedAmount: 100 
+        }, 
+        nullProgress)
     )
     .resolves
     .toEqual(APPROVED_RESPONSE.payment)
