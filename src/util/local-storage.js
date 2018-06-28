@@ -7,9 +7,9 @@ export function getLocalStorage() {
   }
   catch (e) {
     if (!didLogUnavailability) {
-      console.info(`Local storage not available (${e.message})`)
-
       didLogUnavailability = true
+      
+      console.info(`Local storage not available (${e.message})`)
     }
 
     // fallback, e.g. when third-party cookies are denied and running in an iframe

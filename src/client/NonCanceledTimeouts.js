@@ -1,5 +1,5 @@
 import { getLocalStorage } from '../util/local-storage'
-import { ERROR_NON_CANCELED_TIMEOUTS, ERROR_TIMEOUT, ERROR_SERVICE_UNAVAILABLE } from '../util/error-messages'
+import { ERROR_NON_CANCELED_TIMEOUTS, ERROR_TIMEOUT, ERROR_UNAVAILABLE } from '../util/error-messages'
 import { ENDPOINT_CANCEL } from './BlueCodeClient'
 import { ErrorResponse } from './ErrorResponse' // eslint-disable-line no-unused-vars
 import { BACKOFF_TIME_MS } from './caller' // eslint-disable-line no-unused-vars
@@ -107,7 +107,7 @@ export class NonCanceledTimeouts {
     .catch(e => {
         let isOffline = 
           e.code === ERROR_TIMEOUT
-          || e.code === ERROR_SERVICE_UNAVAILABLE
+          || e.code === ERROR_UNAVAILABLE
 
         if (isOffline) {
           setTimeout(() => this.retryCancelUntilTimeoutIsGone(merchantTxId), BACKOFF_TIME_MS)

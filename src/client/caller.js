@@ -3,7 +3,7 @@ import { wait } from './wait'
 
 import { 
   ERROR_TIMEOUT,
-  ERROR_SERVICE_UNAVAILABLE,
+  ERROR_UNAVAILABLE,
   ERROR_SYSTEM_FAILURE
 } from '../util/error-messages'
 
@@ -47,13 +47,11 @@ export function createRetryingCaller(delegateCaller) {
     * @param {number} retryIndex 0 for the first call. 1 on the first retry etc.
     */
   async function retry(endpoint, payload, progress, retryIndex) {
-    progress = progress || consoleProgress
-
     try {
       return await delegateCaller(endpoint, payload, progress)
     }
     catch (e) {
-      if (e.code === ERROR_SERVICE_UNAVAILABLE || e.code === ERROR_TIMEOUT) {
+      if (e.code === ERROR_UNAVAILABLE || e.code === ERROR_TIMEOUT) {
         if (retryIndex < MAX_RETRIES) {
           progress.onProgress(`Could not reach ${endpoint} (${e.code}). Retrying...`)
 
@@ -70,7 +68,8 @@ export function createRetryingCaller(delegateCaller) {
     }
   }
 
-  return (endpoint, payload, progress) => retry(endpoint, payload, progress, 0)
+  return (endpoint, payload, progress) => 
+    retry(endpoint, payload, progress || consoleProgress, 0)  
 }
 
 /**
@@ -121,7 +120,7 @@ export function createCaller(username, password, baseUrl) {
             reject(new ErrorResponse('Timeout or offline.', ERROR_TIMEOUT))
           }
           else if (xhr.status === 503) {
-            reject(new ErrorResponse('Server replied with status 503', ERROR_SERVICE_UNAVAILABLE))
+            reject(new ErrorResponse('Server replied with status 503', ERROR_UNAVAILABLE))
           }
           else {
             // test if there was a JSON error response from the server

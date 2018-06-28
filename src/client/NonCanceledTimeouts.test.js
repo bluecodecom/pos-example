@@ -24,6 +24,20 @@ it('cancels added transactions', async () => {
   await expect(cancel).toBeCalledWith(merchantTxId, nullProgress)
 })
 
+// this test is identical to the previous one but lacks a wait before the final expect.
+// we want cancels to start immediately, not after a retry delay
+it('cancels added transactions synchronously', async () => {
+  let cancel = jest.fn().mockImplementation(async () => {})
+  let timeouts = new NonCanceledTimeouts(cancel)
+  getLocalStorage().clear()
+
+  expect.assertions(1)
+
+  timeouts.add(merchantTxId, nullProgress)
+
+  await expect(cancel).toBeCalledWith(merchantTxId, nullProgress)
+})
+
 it('reports isStillCanceling correctly', async () => {
   let cancel = async () => {}
   let timeouts = new NonCanceledTimeouts(cancel)
@@ -64,7 +78,7 @@ it('retries added transactions', async () => {
 
   timeouts.add(merchantTxId, nullProgress)
 
-  await wait(2)
+  await wait(5)
 
   await expect(cancel).toHaveBeenCalledTimes(2)
 })

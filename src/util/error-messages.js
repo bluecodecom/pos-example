@@ -15,7 +15,7 @@ export const ERROR_NON_CANCELED_TIMEOUTS = 'NON_CANCELED_TIMEOUTS' // see the do
 
 // server-side error codes
 export const ERROR_SYSTEM_FAILURE = 'SYSTEM_FAILURE'
-export const ERROR_SERVICE_UNAVAILABLE = 'SERVICE_UNAVAILABLE' // this is a 503 status code
+export const ERROR_UNAVAILABLE = 'SERVICE_UNAVAILABLE' // this is a 503 status code
 export const ERROR_ISSUER_NOT_SUPPORTED = 'ISSUER_NOT_SUPPORTED'
 export const ERROR_INVALID_BARCODE = 'INVALID_BARCODE'
 export const ERROR_INVALID_BRANCH = 'INVALID_BRANCH'
@@ -34,7 +34,7 @@ export const MESSAGES = {
   'en': {
     [ERROR_TIMEOUT]: 'Could not reach server. Internet connection might not work. Please try again.',
     [ERROR_NON_CANCELED_TIMEOUTS]: 'Blue Code is currently unable to process transactions. Please try again later.',
-    [ERROR_SERVICE_UNAVAILABLE]: 'Blue Code is currently unable to process transactions. Please try again.',
+    [ERROR_UNAVAILABLE]: 'Blue Code is currently unable to process transactions. Please try again.',
     [ERROR_CANCELLED]: 'Transaction cancelled.',
     [ERROR_SYSTEM_FAILURE]: 'Unexpected technical error. Please try again. Contact support if the problem persists.',
     [ERROR_INVALID_PARAMETER]: 'Fatal technical error ("invalid parameter"). Please contact support.',
@@ -59,7 +59,7 @@ export const MESSAGES = {
   'de': {
     [ERROR_TIMEOUT]: 'Server konnte nicht erreicht werden. Eventuell funktioniert die Internetverbindung nicht. Versuchen Sie es bitte erneut.',
     [ERROR_NON_CANCELED_TIMEOUTS]: 'Blue Code kann gerade keine Transaktionen annehmen. Versuchen Sie es später bitte erneut.',
-    [ERROR_SERVICE_UNAVAILABLE]: 'Blue Code kann gerade keine Transaktionen annehmen. Versuchen Sie es bitte erneut.',
+    [ERROR_UNAVAILABLE]: 'Blue Code kann gerade keine Transaktionen annehmen. Versuchen Sie es bitte erneut.',
     [ERROR_CANCELLED]: 'Vorgang abgebrochen. Die Transaktion wurde nicht durchgeführt.',
     [ERROR_SYSTEM_FAILURE]: 'Systemfehler. Versuchen Sie es bitte später erneut. Bitte kontaktieren Sie die Service-Hotline wenn der Fehler besteht.',
     [ERROR_INVALID_PARAMETER]: 'Technischer Fehler ("invalid parameter"). Bitte kontaktieren Sie die Service-Hotline.',
