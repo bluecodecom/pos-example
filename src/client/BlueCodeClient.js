@@ -87,14 +87,31 @@ export class BlueCodeClient {
   }
 
   /**
-   * Cancel a transaction.
-   * @async
-   * @param {string} merchantTxId 
-   * @param {progress.Progress} [progress]
-   * @return {statusResponse} 
-  */
+    * Cancel a transaction.
+    * If the server is not reachable, this call will retry twice. 
+    * If the retries fail, the call will reject the promise.
+    * Frequently, you want to retry indefinitely, in which  
+    * case you should use @{link #cancelRetryingIndefinitely}
+    * @async
+    * @param {string} merchantTxId 
+    * @param {progress.Progress} [progress]
+    * @return {statusResponse} 
+    */
   cancel(merchantTxId, progress) {
     return this.call(ENDPOINT_CANCEL, { merchantTxId }, progress)
+  }
+
+  /**
+    * Same as cancel but will go on trying to cancel until the call
+    * succeeds. While cancels are running, no other transaction can 
+    * be initiated. 
+    * The method does not return anything since it can be assumed
+    * the cancel will always eventually succeed.
+    * @param {string} merchantTxId 
+    * @param {progress.Progress} [progress]
+    */
+  cancelRetryingIndefinitely(merchantTxId, progress) {
+    this.nonCanceledTimeouts.add(paymentOptions.merchantTxId, progress)
   }
 
   /**
@@ -117,9 +134,11 @@ export class BlueCodeClient {
         payload = { amount , ...payload }
       }
 
-      await this.call(ENDPOINT_REFUND, payload, progress)
+      let result = await this.call(ENDPOINT_REFUND, payload, progress)
 
       progress.onProgress('Refund successful.', STATUS_REFUNDED)
+
+      return result
     }
     catch (e) {
       progress.onProgress('Refund failed: ' + e.response.errorCode, e.code)
@@ -175,16 +194,18 @@ export class BlueCodeClient {
       /** @type {processingStatus} */
       let paymentStatus = response.status
       
+      let checkStatusIn = parseInt(paymentStatus.checkStatusIn) || 1000
+      let ttl = parseInt(paymentStatus.ttl) || 10000
       let timeElapsed = new Date().getTime() - startTime
 
-      if (timeElapsed > paymentStatus.ttl) {
+      if (timeElapsed + checkStatusIn > ttl) {
         throw new ErrorResponse('Payment timed out.', ERROR_TIMEOUT)
       }
 
-      progress.onProgress('Got response PROCESSING. Will call status endpoint again in ' + 
-        Math.round(paymentStatus.checkStatusIn / 1000) + 's...', STATUS_PROCESSING)
+      progress.onProgress('Got response PROCESSING. after ' + timeElapsed + '/' + ttl +' Will call status endpoint again in ' + 
+        Math.round(checkStatusIn / 1000) + 's...', STATUS_PROCESSING)
 
-      await wait(paymentStatus.checkStatusIn, progress)
+      await wait(checkStatusIn, progress)
 
       response = await this.status(paymentOptions.merchantTxId, progress)
 
@@ -262,6 +283,9 @@ export class BlueCodeClient {
       }
 
       if (needsCancel) {
+        // this will run cancellations in the background which is what we want.
+        // we could have called this.cancel, but that would run the first three
+        // cancel attempts in the foreground, which isn't meaningful here.
         this.nonCanceledTimeouts.add(paymentOptions.merchantTxId, progress)
       }
 
