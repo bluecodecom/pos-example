@@ -12,9 +12,7 @@
   *   cancel on the latest instance.
   */
  
-/**
-  * @type {Progress}
-  */
+/** @type {Progress} */
 export const consoleProgress = {
   onProgress: (message, status) => {
     // a null message is allowed if the call is intended to just change status
@@ -25,6 +23,7 @@ export const consoleProgress = {
   onCancellable: (cancel) => {}
 }
 
+/** @type {Progress} */
 export const nullProgress = {
   onProgress: (message, status) => {},
   onCancellable: (cancel) => {}
