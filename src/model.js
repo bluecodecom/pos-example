@@ -1,5 +1,3 @@
-import './client/typedefs'
-
 const VAT_RATE = 0.17
 
 export class Product {

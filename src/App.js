@@ -7,9 +7,11 @@ import { ModalOverlay, Button } from './util-components'
 import { BlueCodeClient, BASE_URL_SANDBOX } from './client/BlueCodeClient'
 import { CredentialsDialog, getCredentials } from './credentials-components';
 import { RefundDialog } from './refund-components';
-import { MESSAGES, ERROR_NON_CANCELED_TIMEOUTS } from './util/error-messages' 
+import { MESSAGES, ERROR_NON_CANCELED_TIMEOUTS, ERROR_SYSTEM_FAILURE } from './util/error-messages' 
 import * as progress from './client/console-progress'  // eslint-disable-line no-unused-vars
 import { Exception } from 'handlebars';
+import { rewardedPayment } from './client/rewarded-payment';
+import { ErrorResponse } from './client/ErrorResponse';
 
 const CENTS_PER_EURO = 100
 
@@ -312,14 +314,42 @@ class App extends Component {
 
     let client = this.getClient()
 
+    let progress = this.getProgress('Payment')
+
     try {
-      let response = await client.pay(
-        {
-          barcode: barcode,
-          branchExtId: branch,
-          requestedAmount: toMinorCurrencyUnit(this.state.order.getTotal())
-        },
-        this.getProgress('Payment')
+      let isRewardApplicable = (reward) => true
+
+      let getDiscountedAmount = (originalAmount, rewards) => {
+        // just to show the principle of discounts we give 50% discount for one reward, 66% for two etc...
+        let discountedAmount = Math.round(originalAmount / (rewards.length+1))
+
+        if (rewards.length) {
+          progress.onProgress(`Awarding ${ Math.round(100 * rewards.length / (rewards.length+1)) }% discount. New total ${ discountedAmount }.`)
+        }
+
+        return discountedAmount
+      }
+      
+      let getPaymentOptions = 
+        (rewards) => {
+          let totalAmount = toMinorCurrencyUnit(this.state.order.getTotal())
+          let requestedAmount = getDiscountedAmount(totalAmount, rewards)
+    
+          return {
+            barcode: barcode,
+            branchExtId: branch,
+            discountAmount: totalAmount - requestedAmount,
+            paymentAmount: totalAmount,
+            requestedAmount: requestedAmount
+          }
+        }
+  
+      let response = await rewardedPayment(
+        barcode,
+        isRewardApplicable,
+        getPaymentOptions,
+        client,
+        progress
       )
 
       this.setState({
@@ -327,6 +357,10 @@ class App extends Component {
       })
     }
     catch (e) {
+      if (!(e instanceof ErrorResponse)) {
+        progress.onProgress('Client exception ' + e, ERROR_SYSTEM_FAILURE)
+      }
+
       console.error(e)
     }
   }

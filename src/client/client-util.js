@@ -40,7 +40,7 @@ export function mapKeys(object, mapFunction) {
         newObject[mapFunction(key)] = value
 
         return newObject 
-      }, {})
+      }, Array.isArray(object) ? [] : {})
   }
 }
 

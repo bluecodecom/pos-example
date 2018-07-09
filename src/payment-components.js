@@ -22,9 +22,11 @@ class MagicBarcode {
 
 const MAGIC_BARCODES = [
   new MagicBarcode('98802222100100123456', 'Immediate Success'),
+  new MagicBarcode('98802222100100500001', 'Loyalty Reward'),
   new MagicBarcode('98802222999900301000', 'Success after 5s'),
   new MagicBarcode('98802222999900315000', 'Timeout after 15s'),
   new MagicBarcode('98888888888888888888', 'Invalid barcode'),
+  new MagicBarcode('98802222100100500503', 'Redeem timeout'),
   new MagicBarcode('98804444000000402006', 'INVALID_STATE'),
   new MagicBarcode('98804444000000402007', 'LIMIT_EXCEEDED'),
   new MagicBarcode('98802222999900500500', 'SYSTEM_FAILURE'),

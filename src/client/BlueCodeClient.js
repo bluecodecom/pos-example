@@ -1,4 +1,3 @@
-import './typedefs.js'
 import { 
   dateToString, 
   generateMerchantTxId, 
@@ -32,6 +31,60 @@ export const ENDPOINT_CANCEL = '/cancel'
 export const ENDPOINT_STATUS = '/status'
 export const ENDPOINT_PAYMENT = '/payment'
 export const ENDPOINT_REFUND = '/refund'
+export const ENDPOINT_LOYALTY_STATUS = '/loyalty/status'
+export const ENDPOINT_REDEEM_REWARD = '/rewards/redeem'
+
+/**
+ @typedef processingStatus
+ @type {Object}
+ @property {number} checkStatusIn
+ @property {string} merchantTxId
+ @property {number} ttl
+
+ @typedef statusResponse
+ @type {Object}
+ @property {string} result
+ @property {Object} status
+ @property {string} status.merchantTxId
+ @property {number} status.checkStatusIn
+ @property {number} status.ttl
+
+ @property {Object} payment
+ @property {string} payment.acquirerTxId
+ @property {string} payment.code
+ @property {string} payment.state
+
+ @typedef paymentOptions
+ @type {Object}
+ @property {string} barcode
+ @property {string} branchExtId
+ @property {string} currency
+ @property {string} merchantTxId
+ @property {number} requestedAmount
+ @property {number} [discountAmount]
+ @property {number} [purchase_amount]
+ @property {number} [tipAmount]
+ @property {string} [terminal]
+ @property {string} [slip]
+ @property {string} [operator]
+ @property {string} [tippingMode]
+ @property {string} [scheme]
+ @property {string} [slipDateTime]
+
+ @typedef {Object} reward 
+ @property {string} reward.id
+ @property {string} reward.ean
+ @property {Object} data 
+
+ @typedef loyaltyStatusResponse
+ @property {string} result
+ @property {reward[]} rewards
+ @property {Object} default
+ @property {number} default.points
+ @property {string} default.membership_number
+ @property {string} default.membership_id
+ @property {Object} default.data
+*/
 
 /**
   * The class performing high-level Blue Code API calls. Manages error handling, retries etc.
@@ -71,8 +124,12 @@ export class BlueCodeClient {
     * @param {progress.Progress} progress
     * @param {*} payload POST payload. Will be converted into JSON (including converting camel case to snake case)
     */
-  call(endpoint, progress, payload) {
-    return this.caller(endpoint, progress, payload)
+  call(endpoint, payload, progress) {
+    progress = progress || consoleProgress
+
+    progress.onProgress(null, STATUS_CONNECTING)
+
+    return this.caller(endpoint, payload, progress)
   }
 
   /**
@@ -111,7 +168,7 @@ export class BlueCodeClient {
     * @param {progress.Progress} [progress]
     */
   cancelRetryingIndefinitely(merchantTxId, progress) {
-    this.nonCanceledTimeouts.add(paymentOptions.merchantTxId, progress)
+    this.nonCanceledTimeouts.add(merchantTxId, progress)
   }
 
   /**
@@ -194,8 +251,8 @@ export class BlueCodeClient {
       /** @type {processingStatus} */
       let paymentStatus = response.status
       
-      let checkStatusIn = parseInt(paymentStatus.checkStatusIn) || 1000
-      let ttl = parseInt(paymentStatus.ttl) || 10000
+      let checkStatusIn = parseInt(paymentStatus.checkStatusIn, 10) || 1000
+      let ttl = parseInt(paymentStatus.ttl, 10) || 10000
       let timeElapsed = new Date().getTime() - startTime
 
       if (timeElapsed + checkStatusIn > ttl) {
@@ -229,6 +286,7 @@ export class BlueCodeClient {
 
   /**
    * Perform a payment.
+   * Note: this call does not check for loyalty rewards. Use {@link rewarded-payment} for that.
    * @param {paymentOptions} paymentOptions 
    * @param {progress.Progress} [progress]
    * @return {Promise<statusResponse>}
@@ -243,8 +301,6 @@ export class BlueCodeClient {
       merchantTxId: generateMerchantTxId(),
       slipDateTime: dateToString(new Date())
     }
-
-    progress.onProgress(null, STATUS_CONNECTING)
 
     paymentOptions = { ...defaults, ...paymentOptions }
 
@@ -283,16 +339,15 @@ export class BlueCodeClient {
       }
 
       if (needsCancel) {
-        // this will run cancellations in the background which is what we want.
-        // we could have called this.cancel, but that would run the first three
-        // cancel attempts in the foreground, which isn't meaningful here.
-        this.nonCanceledTimeouts.add(paymentOptions.merchantTxId, progress)
+        // the cancellation can run in the background; waiting for it to complete
+        // adds no value.
+        this.cancelRetryingIndefinitely(paymentOptions.merchantTxId, progress)
       }
 
       throw e
     }
 
-    let paymentState = response.payment && response.payment.state || '<missing>'
+    let paymentState = (response.payment && response.payment.state) || '<missing>'
     let paymentCode = response.payment && response.payment.code
 
     let isApproved = paymentState === STATUS_APPROVED
@@ -307,5 +362,57 @@ export class BlueCodeClient {
     }
 
     return response.payment
+  }
+
+  /**
+   * Returns information on the user's loyalty programs, including any current rewards.
+   * See rewarded-payment
+   * @param {string} barcode
+   * @param {progress.progress} progress
+   * @return {Promise<loyaltyStatusResponse>}
+   */
+  async loyaltyStatus(barcode, progress) {
+    /** @type {loyaltyStatusResponse} */
+    let status = await this.call(ENDPOINT_LOYALTY_STATUS, { barcode }, progress)
+    
+    if (status.result !== 'OK') {
+      // this should never happen
+      throw new ErrorResponse(
+        `Got error result but no error HTTP status for ${ENDPOINT_LOYALTY_STATUS}`, 
+        status.error_code || ERROR_SYSTEM_FAILURE, 
+        status)
+    }
+
+    let rewardCount = (status.rewards || []).length
+
+    progress.onProgress(
+      rewardCount 
+        ? `Loyalty status: ${rewardCount} reward${ rewardCount > 1 ? 's' : ''}.` 
+        : `Loyalty status: no activated rewards.`)
+
+    return status
+  }
+
+  /**
+   * Marks a reward as redeemed and therefore note usable again. Should be called after a 
+   * payment has been made where the reward was applied in the form of a discount.
+   * See rewarded-payment
+   * @param {string} rewardId 
+   * @param {progress.progress} progress 
+   */
+  async redeemReward(rewardId, progress) {
+    let response = await this.call(ENDPOINT_REDEEM_REWARD, { rewardId }, progress)
+
+    if (response.result !== 'OK') {
+      // this should never happen
+      throw new ErrorResponse(
+        `Got error result but no error HTTP status for ${ENDPOINT_REDEEM_REWARD}`, 
+        response.status.error_code || ERROR_SYSTEM_FAILURE, 
+        response)
+    }
+
+    progress.onProgress(`Marked reward ${rewardId} as redeemed.`)
+
+    return response
   }
 }

@@ -12,7 +12,7 @@ import { getLocalStorage } from '../util/local-storage';
 // note that the XHR caller converts snake case to camel case and vice versa, 
 // so we are only dealing with camel case here, even though the actual responses
 // are in snake case 
-const APPROVED_RESPONSE = {
+export const APPROVED_RESPONSE = {
   result: 'OK',
   payment: {
     state: STATUS_APPROVED,
@@ -312,7 +312,10 @@ it('handles a complex sequence of failures', async () => {
   return expect(caller).toBeCalledWith(ENDPOINT_CANCEL, {merchantTxId}, nullProgress)
 })
 
-it('handles approved refunds', () => {
+/**
+ * @param {(client: BlueCodeClient) => void} call
+ */
+function testSimpleCall(call) {
   const RESPONSE = { result: 'OK' }
   let caller = jest.fn().mockImplementation(async () => RESPONSE)
 
@@ -321,9 +324,26 @@ it('handles approved refunds', () => {
   expect.assertions(1)
 
   return expect(
-      client.refund('1234', 123, null, nullProgress)
+      call(client)
     )
     .resolves
-    // it doesn't resolve to anything well-defined
     .toEqual(RESPONSE)
+}
+
+it('handles approved refunds', () => {
+  testSimpleCall(
+    (client) => 
+      client.refund('1234', 123, null, nullProgress))
+})
+
+it('handles successful loyalty status calls', () => {
+  testSimpleCall(
+    (client) => 
+      client.loyaltyStatus('1234', nullProgress))
+})
+
+it('handles successful redemption of rewards refunds', () => {
+  testSimpleCall(
+    (client) => 
+      client.redeemReward('1234', nullProgress))
 })
