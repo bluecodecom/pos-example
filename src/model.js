@@ -72,11 +72,28 @@ export class Order {
   }
 }
 
-export const PRODUCTS = [
-  new Product('aubergine', 'aubergines', 1.50),
-  new Product('avocado', 'avocados', 2.20),
-  new Product('broccoli', 'heads of broccoli', 3.20),
-  new Product('corn', 'corn cobs', 1.20),
-  new Product('beetroot', 'beetroots', 2.70),
-  new Product('cucumber', 'cucumbers', 1.30)
-]
+let inflation = 1.0
+
+/**
+ * This creatively named variables is a scaling factor for prices.
+ * We use it to be able to set extremely low prices when testing in 
+ * production where we're using real money.
+ */
+export function setInflation(newInflation) {
+  inflation = newInflation
+}
+
+function inflate(price) {
+  return Math.round(price * inflation * 100) / 100
+}
+
+export function getProducts() {
+  return [
+    new Product('aubergine', 'aubergines', inflate(1.50)),
+    new Product('avocado', 'avocados', inflate(2.20)),
+    new Product('broccoli', 'heads of broccoli', inflate(3.20)),
+    new Product('corn', 'corn cobs', inflate(1.20)),
+    new Product('beetroot', 'beetroots', inflate(2.70)),
+    new Product('cucumber', 'cucumbers', inflate(1.30))
+  ]
+}

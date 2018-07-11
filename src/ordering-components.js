@@ -1,5 +1,5 @@
 import React from 'react'
-import { PRODUCTS } from './model'
+import { getProducts } from './model'
 import './ordering-components.css'
 import { Card, Button } from './util-components'
 
@@ -44,7 +44,7 @@ export function ProductSelectionCard(props) {
       className='product-selection-card'
       actions={ [ 'ic_settings_white_24px' ] } 
       onAction={ props.onOpenSettings }>
-    { PRODUCTS.map(product =>
+    { getProducts().map(product =>
       <ProductButton 
         key={ product.name } 
         product={ product } 
