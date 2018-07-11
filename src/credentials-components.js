@@ -55,7 +55,9 @@ export class CredentialsDialog extends Component {
       return false
     }
 
-    let client = new BlueCodeClient(this.state.username, this.state.password, BASE_URL_SANDBOX)
+    let baseUrl = this.props.baseUrl || BASE_URL_SANDBOX
+
+    let client = new BlueCodeClient(this.state.username, this.state.password, baseUrl)
 
     let merchantTxId = generateMerchantTxId()
 
@@ -77,13 +79,22 @@ export class CredentialsDialog extends Component {
         .catch(e => console.error(e))
     }
     catch (e) {
+      let hostname = new URL(baseUrl).hostname
+
       if (e.code === 'BRANCH_NOT_FOUND') {
         this.setState({ error: 'Wrong branch. Check developer portal for right value.'})
         return false
       }
 
       if (e.code === 'UNAUTHORIZED') {
-        this.setState({ error: 'Invalid credentials. Sandbox responds with UNAUTHORIZED.'})
+        this.setState({ error: 'Invalid credentials. ' + hostname + ' responds with UNAUTHORIZED.'})
+        return false
+      }
+
+      if (e.code === 'TIMEOUT') {
+        this.setState({ error: 'Timeout calling ' + hostname + 
+          '. Does the server not allow connections from this domain (CORS)?'})
+
         return false
       }
     }

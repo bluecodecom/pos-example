@@ -107,7 +107,8 @@ class App extends Component {
 
   renderCredentialsDialog() {
     let close = () => 
-      this.setState({ 
+      getCredentials() 
+      && this.setState({ 
         isCredentialsDialogOpen: null 
       })
 
@@ -115,6 +116,7 @@ class App extends Component {
       onClose={ close }>
 
       <CredentialsDialog
+        baseUrl={ this.getBaseUrl() }
         onCancel={ close } 
         onDone={ close }
         canCancel={ !!getCredentials() }
@@ -288,9 +290,11 @@ class App extends Component {
 
     let [username, password] = credentials
 
-    let baseUrl = this.props.baseUrl || BASE_URL_SANDBOX
+    return new BlueCodeClient(username, password, this.getBaseUrl())
+  }
 
-    return new BlueCodeClient(username, password, baseUrl)
+  getBaseUrl() {
+    return this.props.baseUrl || BASE_URL_SANDBOX
   }
 
   async refund(acquirerTransactionId, amount, reason) {
