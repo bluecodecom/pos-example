@@ -44,9 +44,9 @@ export class Order {
    */
   add(product) {
     let newItems = this.orderItems.map(
-      item => item.product === product ? item.increaseCount() : item)
+      item => item.product.name === product.name ? item.increaseCount() : item)
 
-    let orderItem = newItems.find(item => item.product === product) 
+    let orderItem = newItems.find(item => item.product.name === product.name) 
   
     if (!orderItem) {
       newItems.push(new OrderItem(product, 0))

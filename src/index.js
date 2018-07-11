@@ -33,7 +33,7 @@ const getParameter = (() => {
       'inflation': '0.015'
     },
     'staging': {
-      'base-url': 'https://merchant-api.bluecode.biz/v4',
+      'base-url': 'https://merchant-api.bluecode.mobi/v4',
       'storage-key': 'staging.'
     }
   }

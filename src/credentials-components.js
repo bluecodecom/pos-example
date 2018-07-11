@@ -4,6 +4,7 @@ import { TextInput, Card, Button } from './util-components'
 import { BlueCodeClient, BASE_URL_SANDBOX } from './client/BlueCodeClient'
 import { generateMerchantTxId } from './client/client-util'
 import { getLocalStorage } from './util/local-storage'
+import { consoleProgress } from './client/console-progress';
 
 const CREDENTIALS_KEY = 'credentials'
 
@@ -66,14 +67,17 @@ export class CredentialsDialog extends Component {
     })
 
     try {
+      let shouldCancelOnFailure = false
+
       await client.pay(
         {
           barcode: '98802222100100123456',
           branchExtId: this.state.branch,
           merchantTxId: merchantTxId,
           requestedAmount: 100
-        }
-      )
+        },
+        consoleProgress,
+        shouldCancelOnFailure)
   
       client.cancel(merchantTxId)
         .catch(e => console.error(e))

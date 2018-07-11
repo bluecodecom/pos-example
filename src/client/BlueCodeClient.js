@@ -291,7 +291,7 @@ export class BlueCodeClient {
    * @param {progress.Progress} [progress]
    * @return {Promise<statusResponse>}
    */
-  async pay(paymentOptions, progress) {
+  async pay(paymentOptions, progress, shouldCancelOnFailure = true) {
     progress = progress || consoleProgress
 
     /** @type {paymentOptions} */
@@ -338,7 +338,7 @@ export class BlueCodeClient {
           || e.code === ERROR_SYSTEM_FAILURE
       }
 
-      if (needsCancel) {
+      if (needsCancel && shouldCancelOnFailure) {
         // the cancellation can run in the background; waiting for it to complete
         // adds no value.
         this.cancelRetryingIndefinitely(paymentOptions.merchantTxId, progress)
