@@ -119,7 +119,8 @@ export class BlueCodeClient {
   }
 
   /**
-    * Call an endpoint.
+    * Call an endpoint. Outside of the tests, the caller will be a retrying {@link caller.js} 
+    * that will retry up to twice in the case of timeout.
     * @param {string} endpoint Should start with a slash.
     * @param {progress.Progress} progress
     * @param {*} payload POST payload. Will be converted into JSON (including converting camel case to snake case)

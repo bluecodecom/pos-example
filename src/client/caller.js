@@ -131,7 +131,7 @@ export function createCaller(username, password, baseUrl) {
               // if there was, include it in the exception so clients get
               // more information
               reject(new ErrorResponse(
-                  'Error response ' + response.errorCode,
+                  'Error response ' + getErrorCode(response),
                   getErrorCode(response),
                   response, 
                   retryIndex))
