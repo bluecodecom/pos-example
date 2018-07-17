@@ -76,14 +76,14 @@ export const ENDPOINT_REDEEM_REWARD = '/rewards/redeem'
  @property {string} reward.ean
  @property {Object} data 
 
+ @typedef {Object} membership
+ @property {string} kind
+ @property {string} number
+
  @typedef loyaltyStatusResponse
  @property {string} result
  @property {reward[]} rewards
- @property {Object} default
- @property {number} default.points
- @property {string} default.membership_number
- @property {string} default.membership_id
- @property {Object} default.data
+ @property {membership[]} memberships
 */
 
 /**
