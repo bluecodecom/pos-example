@@ -39,11 +39,14 @@ function getPaymentOptions(rewards) {
   }
 }
 
+async function pay() {
+  return APPROVED_RESPONSE.payment
+}
+
 it('handles payments that do not result in rewards', async () => {
-  expect.assertions(2)
+  expect.assertions(1)
 
   let loyaltyStatus = jest.fn().mockImplementation(async () => NO_REWARDS_RESPONSE)
-  let pay = async () => APPROVED_RESPONSE
 
   let client = {
     loyaltyStatus,
@@ -54,12 +57,11 @@ it('handles payments that do not result in rewards', async () => {
 
   let paymentResponse = await rewardedPayment('1234', isRewardApplicable, getPaymentOptions, client, nullProgress)
 
-  expect(paymentResponse.result).toEqual('OK')
   expect(loyaltyStatus).toHaveBeenCalledTimes(1)
 })
 
 it('handles rewards', async () => {
-  expect.assertions(5)
+  expect.assertions(4)
 
   let loyaltyStatus = 
     async () => REWARD_RESPONSE
@@ -68,7 +70,7 @@ it('handles rewards', async () => {
     async (options) => {
       expect(options.requestedAmount).toEqual(DISCOUNTED_AMOUNT)
 
-      return APPROVED_RESPONSE
+      return APPROVED_RESPONSE.payment
     })
 
   let redeemReward = jest.fn().mockImplementation(
@@ -85,20 +87,17 @@ it('handles rewards', async () => {
 
   let paymentResponse = await rewardedPayment('1234', isRewardApplicable, getPaymentOptions, client, nullProgress)
 
-  expect(paymentResponse.result).toEqual('OK')
   expect(redeemReward).toHaveBeenCalledTimes(1)
   expect(pay).toHaveBeenCalledTimes(1)
 })
 
 it('ignores rewards if loyalty status says they are not configured', async () => {
-  expect.assertions(2)
+  expect.assertions(1)
 
   let loyaltyStatus = jest.fn().mockImplementation(
     async () => { 
       throw new ErrorResponse('Not configured', ERROR_LOYALTY_NOT_CONFIGURED) 
     })
-
-  let pay = async () => APPROVED_RESPONSE
 
   let client = {
     loyaltyStatus,
@@ -109,7 +108,6 @@ it('ignores rewards if loyalty status says they are not configured', async () =>
 
   let paymentResponse = await rewardedPayment('1234', isRewardApplicable, getPaymentOptions, client, nullProgress)
 
-  expect(paymentResponse.result).toEqual('OK')
   expect(loyaltyStatus).toHaveBeenCalledTimes(1)
 })
 
@@ -122,7 +120,7 @@ it('cancels payments if redeem reward fails', async () => {
     async () => REWARD_RESPONSE
 
   let pay = jest.fn().mockImplementation(
-    async (options) => APPROVED_RESPONSE)
+    async (options) => APPROVED_RESPONSE.payment)
 
   let redeemReward = jest.fn().mockImplementation(
     async (rewardId) => { 

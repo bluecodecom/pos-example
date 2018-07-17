@@ -1,7 +1,8 @@
 
 import { BlueCodeClient } from './BlueCodeClient' // eslint-disable-line no-unused-vars
 import * as progress from './console-progress' // eslint-disable-line no-unused-vars
-import { ERROR_LOYALTY_NOT_CONFIGURED, STATUS_APPROVED } from '../util/error-messages';
+import { ERROR_LOYALTY_NOT_CONFIGURED, STATUS_APPROVED, ERROR_SYSTEM_FAILURE } from '../util/error-messages';
+import { ErrorResponse } from './ErrorResponse';
 
 /**
   * Performs a complete payment process including checking for rewards
@@ -40,6 +41,10 @@ export async function rewardedPayment(barcode, isRewardApplicable, getPaymentOpt
 
   // if payment fails we don't catch the exception but instead let it get thrown to the caller
   let paymentResult = await client.pay(paymentOptions, progress)
+
+  if (!paymentResult.merchantTxId) {
+    throw new ErrorResponse('Unexpected server response.', ERROR_SYSTEM_FAILURE, paymentResult)
+  }
 
   try {
     for (let reward of applicableRewards) {
