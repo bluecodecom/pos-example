@@ -10,7 +10,7 @@ import { ERROR_LOYALTY_NOT_CONFIGURED, STATUS_APPROVED } from '../util/error-mes
   *
   * @param { string } barcode The payment code
   * @param { (reward) => boolean } isRewardApplicable Callback that should examine the reward
-  *  and determine whether it is applicable to the current basked (typically using the EAN)
+  *  and determine whether it is applicable to the current basket (typically using the EAN)
   * @param { (rewards: reward[]) => paymentOptions } getPaymentOptions Callback that returns
   *  the final payment options. It is passed any applicable rewards and has the opportunity
   *  to apply any discounts.
@@ -47,7 +47,7 @@ export async function rewardedPayment(barcode, isRewardApplicable, getPaymentOpt
     }
   }
   catch (e) {
-    client.cancelRetryingIndefinitely(paymentOptions.merchantTxId)
+    client.cancelRetryingIndefinitely(paymentResult.merchantTxId)
         
     throw e
   }
