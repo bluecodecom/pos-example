@@ -1,6 +1,6 @@
 import { BlueCodeClient, BASE_URL_PRODUCTION, ENDPOINT_CANCEL, ENDPOINT_PAYMENT, ENDPOINT_STATUS } from './BlueCodeClient';
 import { ErrorResponse } from './ErrorResponse';
-import { ERROR_SYSTEM_FAILURE, ERROR_LIMIT_EXCEEDED, STATUS_APPROVED, STATUS_DECLINED, ERROR_TIMEOUT, ERROR_UNAVAILABLE } from '../util/error-messages';
+import { ERROR_SYSTEM_FAILURE, ERROR_LIMIT_EXCEEDED, STATUS_APPROVED, STATUS_DECLINED, ERROR_TIMEOUT, ERROR_UNAVAILABLE, ERROR_MERCHANT_TX_ID_NOT_UNIQUE } from '../util/error-messages';
 import { wait } from './wait';
 import { nullProgress, consoleProgress } from './console-progress';
 import { createRetryingCaller, setBackoffTime } from './caller';
@@ -49,7 +49,7 @@ setBackoffTime(0)
 
 /** @param {caller.Caller} caller */
 const createClient = (caller) =>
-  new BlueCodeClient('foo', 'bar', BASE_URL_PRODUCTION, (createRetryingCaller(caller)))
+  new BlueCodeClient('foo', 'bar', BASE_URL_PRODUCTION, (caller))
 
 it('handles payments with immediate approval', () => {
   let caller = jest.fn().mockImplementation(async () => APPROVED_RESPONSE)
@@ -310,6 +310,64 @@ it('handles a complex sequence of failures', async () => {
 
   // expect cancel to be called
   return expect(caller).toBeCalledWith(ENDPOINT_CANCEL, {merchantTxId}, nullProgress)
+})
+
+/**
+ * This is based on an actual situation when the sandbox was not behaving as it should.
+ * The first payment call times out, the second returns MERCHANT_TX_ID_NOT_UNIQUE at 
+ * which point it should treat the request as successful, check the status and 
+ * retry if processing.
+ */
+it('handles a timeout during payment followed by a processing response', async () => {
+  let callCount = 0
+
+  let caller = async (endpoint) => {
+    callCount++
+
+    // the payment first times out...
+    if (callCount == 1) {
+      throw new ErrorResponse('Timeout', ERROR_TIMEOUT)
+    }
+    // then responds with the first call having been successful.
+    else if (callCount == 2) {
+      throw new ErrorResponse('Turns out the first payment call actually succeeded.', ERROR_MERCHANT_TX_ID_NOT_UNIQUE)
+    }
+    else if (callCount == 3) {
+      expect(endpoint).toBe('/status')
+
+      return PROCESSING_RESPONSE
+    }
+    // and only on the second status call succeeds.
+    else if (callCount == 4) {
+      expect(endpoint).toBe('/status')
+
+      return APPROVED_RESPONSE
+    }
+    else {
+      return {}
+    }
+  }
+
+  const merchantTxId = 'abcd'
+
+  // wrap the caller in a retrying caller like the production code does, 
+  // since it's the retry behavior we're testing
+  let client = createClient(createRetryingCaller(caller))
+
+  expect.assertions(4)
+
+  await expect(
+      client.pay({ 
+        branchExtId: 'foo', 
+        barcode: '1234', 
+        requestedAmount: 100,
+        merchantTxId
+      }, consoleProgress)
+    )
+    .resolves
+    .toEqual(APPROVED_RESPONSE.payment)
+
+  expect(callCount).toBe(4)
 })
 
 /**

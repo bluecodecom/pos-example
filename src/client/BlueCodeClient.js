@@ -215,7 +215,7 @@ export class BlueCodeClient {
     progress = progress || consoleProgress
 
     let response
-    
+
     try {
       response = await this.call(ENDPOINT_PAYMENT, paymentOptions, progress)
     }
@@ -223,10 +223,10 @@ export class BlueCodeClient {
       // we will receive this error if the first transaction was in fact processed, 
       // despite the client receiving a timeout. we now know the transaction was in
       // fact successful.
-      if (e.retryIndex > 0 && e.response && e.response.errorCode === 'MERCHANT_TX_ID_NOT_UNIQUE') {
+      if (e.retryIndex > 0 && e.code === 'MERCHANT_TX_ID_NOT_UNIQUE') {
         progress.onProgress('Transaction ID not unique. Seems like the first attempt got through.')
 
-        return await this.status(paymentOptions.merchantTxId, progress)
+        response = await this.status(paymentOptions.merchantTxId, progress)
       }
       // something else went wrong. if the server passed us information on the payment
       // (i.e. it was a rejection), use it to throw a nicer error message
@@ -237,8 +237,7 @@ export class BlueCodeClient {
         throw new ErrorResponse(
           'Payment state ' + payment.state + ', code ' + payment.code,
           payment.code,
-          e.response,
-          e.retryIndex
+          e.response
         )
       }
       else {
@@ -260,8 +259,9 @@ export class BlueCodeClient {
         throw new ErrorResponse('Payment timed out.', ERROR_TIMEOUT)
       }
 
-      progress.onProgress('Got response PROCESSING. after ' + timeElapsed + '/' + ttl +' Will call status endpoint again in ' + 
-        Math.round(checkStatusIn / 1000) + 's...', STATUS_PROCESSING)
+      progress.onProgress('Got response PROCESSING. Will call status endpoint again in ' + 
+        Math.round(checkStatusIn / 1000) + ' s (will give up in ' +
+        Math.round((ttl - timeElapsed) / 1000) + ' s)...', STATUS_PROCESSING)
 
       await wait(checkStatusIn, progress)
 

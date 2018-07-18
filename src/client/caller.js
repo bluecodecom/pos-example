@@ -60,15 +60,17 @@ export function createRetryingCaller(delegateCaller) {
           return await retry(endpoint, payload, progress, retryIndex+1)
         }
         else {
-          throw new ErrorResponse('Could not reach ' + endpoint + '.', e.code)
+          throw new ErrorResponse('Could not reach ' + endpoint + '.', e.code, null, retryIndex)
         }
       }
+
+      e.retryIndex = retryIndex
 
       throw e
     }
   }
 
-  return (endpoint, payload, progress) => 
+  return (endpoint, payload, progress) =>
     retry(endpoint, payload, progress || consoleProgress, 0)  
 }
 
@@ -77,7 +79,7 @@ export function createRetryingCaller(delegateCaller) {
   * Perform an API call.
   */
 export function createCaller(username, password, baseUrl) {
-  return (endpoint, payload, progress, retryIndex) => {
+  return (endpoint, payload, progress) => {
     progress = progress || consoleProgress
 
     let timeoutMs = DEFAULT_TIMEOUT_MS
@@ -133,8 +135,7 @@ export function createCaller(username, password, baseUrl) {
               reject(new ErrorResponse(
                   'Error response ' + getErrorCode(response),
                   getErrorCode(response),
-                  response, 
-                  retryIndex))
+                  response))
             }
             else {
               reject(new ErrorResponse(

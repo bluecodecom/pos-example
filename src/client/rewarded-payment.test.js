@@ -1,9 +1,25 @@
 
 import { rewardedPayment } from './rewarded-payment'
 import { nullProgress } from './console-progress'
-import { APPROVED_RESPONSE } from './BlueCodeClient.test'
 import { ErrorResponse } from './ErrorResponse';
-import { ERROR_LOYALTY_NOT_CONFIGURED, ERROR_SYSTEM_FAILURE } from '../util/error-messages';
+import { ERROR_LOYALTY_NOT_CONFIGURED, ERROR_SYSTEM_FAILURE, STATUS_APPROVED } from '../util/error-messages';
+
+// note that the XHR caller converts snake case to camel case and vice versa, 
+// so we are only dealing with camel case here, even though the actual responses
+// are in snake case 
+export const APPROVED_RESPONSE = {
+  result: 'OK',
+  payment: {
+    state: STATUS_APPROVED,
+    merchantTxId: 'tx-1234',
+    acquirerTxId: 'ABCDEF123400001111222',
+    scheme: 'BLUE_CODE',
+    totalAmount: 100,
+    requestedAmount: 100,
+    consumerTipAmount: 0,
+    slip_note: 'www.bluecode.com'
+  }
+}
 
 const NO_REWARDS_RESPONSE = {
   result: 'OK',
