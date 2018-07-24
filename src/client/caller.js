@@ -11,7 +11,7 @@ import {
   mapKeys,
   camelCaseToSnakeCase, 
   snakeCaseToCamelCase
-} from './client-util.js'
+} from '../util/client-util'
 
 import { consoleProgress } from './console-progress'
 

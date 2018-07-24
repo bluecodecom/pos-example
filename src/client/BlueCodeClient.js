@@ -2,7 +2,7 @@ import {
   dateToString, 
   generateMerchantTxId, 
   requireAttribute
-} from './client-util.js'
+} from '../util/client-util.js'
 
 import { 
   ERROR_SYSTEM_FAILURE,
@@ -12,16 +12,16 @@ import {
   STATUS_APPROVED,
   STATUS_CANCELED,
   STATUS_REFUNDED 
-} from '../util/error-messages'
+} from '../util/error-messages.js'
 
-import { ErrorResponse } from './ErrorResponse'
-import { consoleProgress } from './console-progress'
+import { ErrorResponse } from './ErrorResponse.js'
+import { consoleProgress } from './console-progress.js'
 // seems to be the only way to get the jsdoc Progress class declaration into scope
-import * as progress from './console-progress' // eslint-disable-line no-unused-vars
+import * as progress from './console-progress.js' // eslint-disable-line no-unused-vars
 import * as caller from './caller.js' // eslint-disable-line no-unused-vars
 
-import { createCallerBlockingCallsWhileStillCanceling, NonCanceledTimeouts } from './NonCanceledTimeouts'
-import { wait } from './wait'
+import { createCallerBlockingCallsWhileStillCanceling, NonCanceledTimeouts } from './NonCanceledTimeouts.js'
+import { wait } from './wait.js'
 import { createRetryingCaller, createCaller } from './caller.js';
 
 export const BASE_URL_PRODUCTION = 'https://merchant-api.bluecode.com/v4'
@@ -31,6 +31,7 @@ export const ENDPOINT_CANCEL = '/cancel'
 export const ENDPOINT_STATUS = '/status'
 export const ENDPOINT_PAYMENT = '/payment'
 export const ENDPOINT_REFUND = '/refund'
+export const ENDPOINT_HEARTBEAT = '/heartbeat'
 export const ENDPOINT_LOYALTY_STATUS = '/loyalty/status'
 export const ENDPOINT_REDEEM_REWARD = '/rewards/redeem'
 
@@ -415,5 +416,51 @@ export class BlueCodeClient {
     progress.onProgress(`Marked reward ${rewardId} as redeemed.`)
 
     return response
+  }
+
+  getTimezone() {
+    function memoize(fn) {
+      let result = fn()
+
+      return () => result
+    }
+
+    // memoize result to only get warning message once. also, even if the browser changed
+    // time zones during a session, we probably prefer to be consistent.
+    return memoize(() => {
+      // works in all modern browsers (i.e. Edge but not IE, Opera but not Opera mini). see
+      // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DateTimeFormat/resolvedOptions
+      let timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
+  
+      if (!timezone) {
+        console.error('Could not get time zone from browser. Assuming CET.')
+  
+        timezone = 'Europe/Zurich'
+      }
+  
+      return timezone
+    })()
+  }
+
+  /**
+   * Notify BlueCode that the POS is up and connected.
+   * @see https://bluecodepayment.readme.io/v4/reference#heartbeat
+   * @param {string} event one of "startup", "shutdown", "period" and "ondemand"
+   * @param {string} branchExtId Identifier for the branch (merchant location)
+   * @param {string} terminal Identifier for this particular POS
+   */
+  async heartbeat(event, branchExtId, terminal, progress) {
+    let timezone = this.getTimezone()
+    let unixtime_ms = new Date().getTime()
+
+    return await this.call(ENDPOINT_HEARTBEAT, 
+      {
+        event,
+        timezone, 
+        unixtime_ms,
+        branchExtId,
+        terminal
+      }, 
+      progress)
   }
 }

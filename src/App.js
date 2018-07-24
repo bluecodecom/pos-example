@@ -12,6 +12,8 @@ import * as progress from './client/console-progress'  // eslint-disable-line no
 import { Exception } from 'handlebars';
 import { rewardedPayment } from './client/rewarded-payment';
 import { ErrorResponse } from './client/ErrorResponse';
+import { heartbeat } from './client/heartbeat';
+import { getTerminalId } from './terminal-id';
 
 const CENTS_PER_EURO = 100
 
@@ -51,10 +53,30 @@ class App extends Component {
     }
   }
 
+  stopHeartbeat = () => {}
+
+  /**
+   * Starts the "heartbeat" process that informs BlueCode that the POS is online.
+   * @see https://bluecodepayment.readme.io/v4/reference#heartbeat
+   */
+  restartHeartbeat() {
+    this.stopHeartbeat()
+
+    let [name, password, branchExtId] = getCredentials()
+
+    // the heartbeat process returns a callback that should be
+    // called when shutting down to send the shutdown event. 
+    this.stopHeartbeat = heartbeat(this.getClient(), branchExtId, getTerminalId())
+  }
+
   componentDidMount() {
-    if (getCredentials()) {
+    if (getCredentials()) {      
       this.getClient().nonCanceledTimeouts.retryPersisted()
+
+      this.restartHeartbeat()
     }
+
+    window.addEventListener('beforeunload', () => this.stopHeartbeat())
   }
 
   /**
@@ -108,6 +130,7 @@ class App extends Component {
   renderCredentialsDialog() {
     let close = () => 
       getCredentials() 
+      && this.restartHeartbeat()
       && this.setState({ 
         isCredentialsDialogOpen: null 
       })

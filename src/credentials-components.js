@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import './credentials-components.css'
 import { TextInput, Card, Button } from './util-components'
 import { BlueCodeClient, BASE_URL_SANDBOX } from './client/BlueCodeClient'
-import { generateMerchantTxId } from './client/client-util'
+import { generateMerchantTxId } from './util/client-util'
 import { getLocalStorage } from './util/local-storage'
 import { consoleProgress } from './client/console-progress';
 
@@ -18,7 +18,7 @@ export function setCredentials(username, password, branch) {
 }
 
 /**
- * @returns string[] An array of user name, password and branch
+ * @returns string[] An array of user name, password and branch. undefined if no credentials.
  */
 export function getCredentials() {
   let json = getLocalStorage().getItem(CREDENTIALS_KEY)
@@ -69,6 +69,7 @@ export class CredentialsDialog extends Component {
     try {
       let shouldCancelOnFailure = false
 
+      // TODO: this being a magic barcode, it only works on staging
       await client.pay(
         {
           barcode: '98802222100100123456',

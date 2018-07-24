@@ -1,7 +1,7 @@
 
 /** Utility functions used by the blue code client. */
 
-function randomString() {
+export function randomString() {
   let A = 'a'.charCodeAt(0)
 
   return '            '
