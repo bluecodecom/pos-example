@@ -64,12 +64,10 @@ export function heartbeat(client, branchExtId, terminal, mocks) {
 
   let onShutdown = async () => {
     if (timeoutId != null) {
-      console.log('clear timeout')
       clearTimeout(timeoutId)
     }
 
     if (didSendStartup) {
-      console.log('shutdown')
       try {
         await client.heartbeat('shutdown', branchExtId, terminal)
       }

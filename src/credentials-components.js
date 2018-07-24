@@ -5,6 +5,7 @@ import { BlueCodeClient, BASE_URL_SANDBOX } from './client/BlueCodeClient'
 import { generateMerchantTxId } from './util/client-util'
 import { getLocalStorage } from './util/local-storage'
 import { consoleProgress } from './client/console-progress';
+import { getTerminalId } from './terminal-id';
 
 const CREDENTIALS_KEY = 'credentials'
 
@@ -49,7 +50,7 @@ export class CredentialsDialog extends Component {
     }
   }
 
-  async verifyCredentials() {
+  async validateCredentials() {
     if (!this.state.username 
         || !this.state.password 
         || !this.state.branch) {
@@ -67,21 +68,11 @@ export class CredentialsDialog extends Component {
     })
 
     try {
-      let shouldCancelOnFailure = false
-
-      // TODO: this being a magic barcode, it only works on staging
-      await client.pay(
-        {
-          barcode: '98802222100100123456',
-          branchExtId: this.state.branch,
-          merchantTxId: merchantTxId,
-          requestedAmount: 100
-        },
-        consoleProgress,
-        shouldCancelOnFailure)
-  
-      client.cancel(merchantTxId)
-        .catch(e => console.error(e))
+      await client.heartbeat(
+        'ondemand',
+        this.state.branch,
+        getTerminalId(),
+        consoleProgress)
     }
     catch (e) {
       let hostname = new URL(baseUrl).hostname
@@ -158,7 +149,7 @@ export class CredentialsDialog extends Component {
           type='flat'
           disabled={ this.state.isValidating || !this.state.username || !this.state.password || !this.state.branch }
           onClick={ async () => { 
-            let isValid = await this.verifyCredentials() 
+            let isValid = await this.validateCredentials() 
             
             if (isValid) {
               setCredentials(this.state.username, this.state.password, this.state.branch)

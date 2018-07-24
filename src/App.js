@@ -128,12 +128,15 @@ class App extends Component {
   }
 
   renderCredentialsDialog() {
-    let close = () => 
+    let close = () => {
       getCredentials() 
-      && this.restartHeartbeat()
-      && this.setState({ 
+      
+      this.restartHeartbeat()
+      
+      this.setState({ 
         isCredentialsDialogOpen: null 
       })
+    }
 
     return <ModalOverlay 
       onClose={ close }>
