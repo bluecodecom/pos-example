@@ -340,7 +340,7 @@ class App extends Component {
   }
 
   async pay(barcode) {
-    let [username, password, branch] = getCredentials() // eslint-disable-line no-unused-vars
+    let [username, password, branchExtId] = getCredentials() // eslint-disable-line no-unused-vars
 
     let client = this.getClient()
 
@@ -366,11 +366,12 @@ class App extends Component {
           let requestedAmount = getDiscountedAmount(totalAmount, rewards)
     
           return {
-            barcode: barcode,
-            branchExtId: branch,
+            barcode,
+            branchExtId,
             discountAmount: totalAmount - requestedAmount,
             paymentAmount: totalAmount,
-            requestedAmount: requestedAmount
+            requestedAmount,
+            terminal: getTerminalId()
           }
         }
   

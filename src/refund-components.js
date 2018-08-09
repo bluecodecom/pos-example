@@ -15,10 +15,14 @@ export class RefundDialog extends Component {
   }
 
   static getDerivedStateFromProps(nextProps, prevState) {
-    if (nextProps.acquirerTxId !== prevState.acquirerTxId) {
-      return { 
+    if (nextProps.acquirerTxId !== prevState.lastSeenAcquirerTxId && nextProps.acquirerTxId) {
+      return {
+        lastSeenAcquirerTxId: nextProps.acquirerTxId,
         acquirerTxId: nextProps.acquirerTxId 
       }
+    }
+    else {
+      return null
     }
   }
 
