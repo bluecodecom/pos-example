@@ -35,6 +35,10 @@ const getParameter = (() => {
     'staging': {
       'base-url': 'https://merchant-api.bluecode.mobi/v4',
       'storage-key': 'staging.'
+    },
+    'dev': {
+      'base-url': 'https://merchant-api.bluecode.dev/v4',
+      'storage-key': 'dev.'
     }
   }
 
