@@ -140,7 +140,10 @@ export class LogPanel extends Component {
     return <div className='log-panel'>
       {
         logEntries.map((entry, i) => 
-          <div className='entry' key={ i.toString() }>{ entry }</div>)
+          // TODO: a bit of a hack; clean up
+          entry.startsWith('http://api.qrserver.com') 
+          ? <div className='entry' key={ i.toString() }><img src={ entry }/></div>
+          : <div className='entry' key={ i.toString() }>{ entry }</div>)
       }
       <div style={{ float:"left", clear: "both" }}
             ref={(el) => { this.messagesEnd = el; }}>

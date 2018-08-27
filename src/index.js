@@ -39,6 +39,10 @@ const getParameter = (() => {
     'dev': {
       'base-url': 'https://merchant-api.bluecode.dev/v4',
       'storage-key': 'dev.'
+    },
+    'ae': {
+      'base-url': 'https://merchant-api.ae.t.bloomco.de/v4',
+      'storage-key': 'dev.'
     }
   }
 

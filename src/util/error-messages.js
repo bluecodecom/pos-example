@@ -8,6 +8,10 @@ export const STATUS_CANCELED = 'CANCELED'
 export const STATUS_REFUNDED = 'REFUNDED'
 export const STATUS_DECLINED = 'DECLINED'
 
+// this is the response to a "register" call; a request for a QR code
+// for a payment where the user pays by scanning the QR code
+export const STATUS_REGISTERED = 'REGISTERED'
+
 // client-side error codes
 export const ERROR_TIMEOUT = 'TIMEOUT'
 export const ERROR_CANCELLED = 'CANCELLED'

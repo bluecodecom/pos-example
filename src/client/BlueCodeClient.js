@@ -11,7 +11,8 @@ import {
   STATUS_PROCESSING,
   STATUS_APPROVED,
   STATUS_CANCELED,
-  STATUS_REFUNDED 
+  STATUS_REFUNDED,
+  STATUS_REGISTERED 
 } from '../util/error-messages.js'
 
 import { ErrorResponse } from './ErrorResponse.js'
@@ -30,6 +31,7 @@ export const BASE_URL_SANDBOX = 'https://merchant-api.bluecode.biz/v4'
 export const ENDPOINT_CANCEL = '/cancel'
 export const ENDPOINT_STATUS = '/status'
 export const ENDPOINT_PAYMENT = '/payment'
+export const ENDPOINT_REGISTER = '/register'
 export const ENDPOINT_REFUND = '/refund'
 export const ENDPOINT_HEARTBEAT = '/heartbeat'
 export const ENDPOINT_LOYALTY_STATUS = '/loyalty/status'
@@ -286,16 +288,7 @@ export class BlueCodeClient {
     return response
   }
 
-  /**
-   * Perform a payment.
-   * Note: this call does not check for loyalty rewards. Use {@link rewarded-payment} for that.
-   * @param {paymentOptions} paymentOptions 
-   * @param {progress.Progress} [progress]
-   * @return {Promise<statusResponse>}
-   */
-  async pay(paymentOptions, progress, shouldCancelOnFailure = true) {
-    progress = progress || consoleProgress
-
+  normalizePaymentOptions(paymentOptions) {
     /** @type {paymentOptions} */
     let defaults = {
       scheme: 'AUTO',
@@ -306,9 +299,25 @@ export class BlueCodeClient {
 
     paymentOptions = { ...defaults, ...paymentOptions }
 
-    requireAttribute(paymentOptions, 'barcode')
     requireAttribute(paymentOptions, 'branchExtId')
     requireAttribute(paymentOptions, 'requestedAmount')
+
+    return paymentOptions
+  }
+
+  /**
+   * Perform a payment.
+   * Note: this call does not check for loyalty rewards. Use {@link rewarded-payment} for that.
+   * @param {paymentOptions} paymentOptions 
+   * @param {progress.Progress} [progress]
+   * @return {Promise<statusResponse>}
+   */
+  async pay(paymentOptions, progress, shouldCancelOnFailure = true) {
+    progress = progress || consoleProgress
+
+    requireAttribute(paymentOptions, 'barcode')
+
+    paymentOptions = this.normalizePaymentOptions(paymentOptions)
 
     /** @type {statusResponse} */
     let response
@@ -360,6 +369,59 @@ export class BlueCodeClient {
     progress.onProgress(message, paymentCode || paymentState)
 
     if (!isApproved) {
+      throw new ErrorResponse(message, response.payment.code, response)
+    }
+
+    return response.payment
+  }
+
+  /**
+   * Register an eCommerce payment, i.e. one where the consumer needs to scan a QR code to pay.
+   * @param {paymentOptions} paymentOptions (note: should not contain a barcode)
+   * @param {*} progress 
+   */
+  async register(paymentOptions, progress) {
+    progress = progress || consoleProgress
+
+    // register does not work with other schemes
+    paymentOptions.scheme = 'blue_code'
+
+    paymentOptions = this.normalizePaymentOptions(paymentOptions)
+
+    /** @type {statusResponse} */
+    let response
+
+    try {
+      response = await this.call(ENDPOINT_REGISTER, paymentOptions, progress)
+  
+      if (!response.payment) {
+        throw new ErrorResponse('Unexpected response to payment call.', ERROR_SYSTEM_FAILURE, response)
+      }
+    }
+    catch (e) {
+      console.error(`${e.message} (${e.code})`)
+
+      let needsCancel = true
+
+      if (e.wasCanceled) {
+        progress.onProgress('Canceled.', STATUS_CANCELED)        
+      }
+      else {
+        progress.onProgress('Fatal error: ' + e.message, e.code)
+      }
+
+      throw e
+    }
+
+    let paymentState = (response.payment && response.payment.state) || '<missing>'
+
+    let isSuccess = paymentState === STATUS_REGISTERED
+
+    let message = 'Payment state: ' + paymentState
+
+    progress.onProgress(message, paymentState)
+
+    if (!isSuccess) {
       throw new ErrorResponse(message, response.payment.code, response)
     }
 

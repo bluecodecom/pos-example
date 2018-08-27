@@ -68,6 +68,10 @@
 
     .entry {
       margin: $unit;
+
+      img {
+        height: 18 * $unit;
+      }
     }
   }
 }

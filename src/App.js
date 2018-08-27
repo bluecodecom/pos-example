@@ -223,7 +223,8 @@ class App extends Component {
             order={ this.state.order }
             isPayEnabled={ !this.state.order.isEmpty() }
             onClear={ clear }
-            onPayment= { pay } />
+            onPayment= { pay }
+            onRegister= { () => this.register() } />
 
           {
             (this.state.isPaymentDialogOpen ?
@@ -337,6 +338,28 @@ class App extends Component {
     catch (e) {
       console.error(e)
     }
+  }
+
+  async register() {
+    let [username, password, branchExtId] = getCredentials() // eslint-disable-line no-unused-vars
+
+    let client = this.getClient()
+
+    let progress = this.getProgress('Payment')
+
+    let totalAmount = toMinorCurrencyUnit(this.state.order.getTotal())
+
+    let paymentOptions = {
+      branchExtId,
+      discountAmount: totalAmount,
+      paymentAmount: totalAmount,
+      requestedAmount: totalAmount,
+      terminal: getTerminalId()
+    }
+
+    let response = await client.register(paymentOptions, progress)
+
+    progress.onProgress(response.qrCode)
   }
 
   async pay(barcode) {

@@ -117,6 +117,11 @@ function PaymentPanel(props) {
       onClick={ cash }>Cash</Button>
 
     <Button 
+      type='flat'
+      disabled={ !props.isPayEnabled }
+      onClick={ props.onRegister }>QR Code</Button>
+
+    <Button 
       type='inverse' 
       disabled={ !props.isPayEnabled } 
       onClick={ props.onPayment }>Blue Code</Button>
@@ -146,7 +151,8 @@ export function OrderCard(props) {
 
       <PaymentPanel 
         isPayEnabled={ props.isPayEnabled }
-        onPayment={ props.onPayment }/>
+        onPayment={ props.onPayment }
+        onRegister={ props.onRegister }/>
 
     </Card>
   )
