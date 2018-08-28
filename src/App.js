@@ -188,7 +188,11 @@ class App extends Component {
         order: new Order() 
       })
     
-    let pay = () => {
+    let pay = () => {    
+      if (this.state.order.getTotal() == 0) {
+        return
+      }
+
       // there are still transactions that timed out and where were 
       // are unable to call cancel because that call also times out.
       // disallow transactions to prevent long queues of cancelations
@@ -341,6 +345,10 @@ class App extends Component {
   }
 
   async register() {
+    if (this.state.order.getTotal() == 0) {
+      return
+    }
+
     let [username, password, branchExtId] = getCredentials() // eslint-disable-line no-unused-vars
 
     let client = this.getClient()

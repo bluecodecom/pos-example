@@ -108,14 +108,7 @@ function OrderTotalPanel(props) {
  * @param {boolean} props.isPayEnabled
  */
 function PaymentPanel(props) {
-  let cash = () => alert('Sorry, this POS only accepts Blue Code.')
-
   return <div className='payment-panel'>
-    <Button 
-      type='flat'
-      disabled={ !props.isPayEnabled }
-      onClick={ cash }>Cash</Button>
-
     <Button 
       type='flat'
       disabled={ !props.isPayEnabled }
