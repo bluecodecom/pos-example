@@ -12,7 +12,10 @@ import {
   STATUS_APPROVED,
   STATUS_CANCELED,
   STATUS_REFUNDED,
-  STATUS_REGISTERED 
+  STATUS_REGISTERED, 
+  STATUS_DECLINED,
+  STATUS_ERROR,
+  STATUS_FAILURE
 } from '../util/error-messages.js'
 
 import { ErrorResponse } from './ErrorResponse.js'
@@ -88,6 +91,15 @@ export const ENDPOINT_REDEEM_REWARD = '/rewards/redeem'
  @property {reward[]} rewards
  @property {membership[]} memberships
 */
+
+const TERMINAL_STATES = [
+  STATUS_CANCELED,
+  STATUS_APPROVED,
+  STATUS_DECLINED,
+  STATUS_REFUNDED,
+  STATUS_ERROR,
+  STATUS_FAILURE
+]
 
 /**
   * The class performing high-level Blue Code API calls. Manages error handling, retries etc.
@@ -426,6 +438,28 @@ export class BlueCodeClient {
     }
 
     return response.payment
+  }
+
+  isTerminalState(state) {
+    return TERMINAL_STATES.indexOf(state) >= 0
+  }
+
+  async waitForTerminalState(merchantTxId, progress) {
+    let response = await this.status(merchantTxId, progress)
+
+    while (response.result === 'PROCESSING' || (response.payment && !this.isTerminalState(response.payment.state))) {
+      await wait(1000, progress)
+
+      response = await this.status(merchantTxId, progress)
+    }
+
+    let payment = response.payment
+
+    if (!payment || !this.isTerminalState(payment.state)) {
+      throw new ErrorResponse(`Unexpected response to payment call: ${(payment && payment.state) || response.result}.`, ERROR_SYSTEM_FAILURE, response)
+    }
+
+    return payment
   }
 
   /**

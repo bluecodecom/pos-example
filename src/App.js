@@ -7,7 +7,7 @@ import { ModalOverlay, Button } from './util-components'
 import { BlueCodeClient, BASE_URL_SANDBOX } from './client/BlueCodeClient'
 import { CredentialsDialog, getCredentials } from './credentials-components';
 import { RefundDialog } from './refund-components';
-import { MESSAGES, ERROR_NON_CANCELED_TIMEOUTS, ERROR_SYSTEM_FAILURE } from './util/error-messages' 
+import { MESSAGES, ERROR_NON_CANCELED_TIMEOUTS, ERROR_SYSTEM_FAILURE, ERROR_CANCELED } from './util/error-messages' 
 import * as progress from './client/console-progress'  // eslint-disable-line no-unused-vars
 import { Exception } from 'handlebars';
 import { rewardedPayment } from './client/rewarded-payment';
@@ -356,10 +356,26 @@ class App extends Component {
       requestedAmount: totalAmount,
       terminal: getTerminalId()
     }
+    
+    try {
+      let response = await client.register(paymentOptions, progress)
 
-    let response = await client.register(paymentOptions, progress)
+      progress.onProgress(`![Payment QR Code](${response.qrCode})`)
 
-    progress.onProgress(response.qrCode)
+      let payment = await client.waitForTerminalState(response.merchantTxId, progress)
+
+      progress.onProgress(`Done. State: ${payment.state}`, payment.state)
+    }
+    catch (e) {
+      if (e.wasCanceled) {
+        progress.onProgress('Canceled.', ERROR_CANCELED)
+      }
+      else if (e instanceof ErrorResponse) {
+        progress.onProgress('Client exception ' + e, ERROR_SYSTEM_FAILURE)
+      }
+
+      console.error(e)
+    }
   }
 
   async pay(barcode) {
@@ -411,7 +427,10 @@ class App extends Component {
       })
     }
     catch (e) {
-      if (!(e instanceof ErrorResponse)) {
+      if (e.wasCanceled) {
+        progress.onProgress('Canceled.', ERROR_CANCELED)
+      }
+      else if (!(e instanceof ErrorResponse)) {
         progress.onProgress('Client exception ' + e, ERROR_SYSTEM_FAILURE)
       }
 

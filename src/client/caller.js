@@ -84,7 +84,9 @@ export function createCaller(username, password, baseUrl) {
 
     let timeoutMs = DEFAULT_TIMEOUT_MS
 
-    progress.onProgress('Calling ' + endpoint + '...')
+    // TODO: add again
+    
+    //  progress.onProgress('Calling ' + endpoint + '...')
 
     return new Promise((resolve, reject) => {
 

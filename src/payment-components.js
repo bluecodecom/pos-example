@@ -128,8 +128,11 @@ export class PaymentDialog extends Component {
   }
 }
 
+// regex matching markdown images, e.g. [alt text](http://image.url/image.png)
+const IMAGE_REGEX = /!\[.*\]\((.*)\)/
+
 /**
- * A clickable product image
+ * The log displaying during a payment operation.
  * @param {Object} props
  * @param {string[]} props.logEntries
  */
@@ -139,11 +142,13 @@ export class LogPanel extends Component {
     
     return <div className='log-panel'>
       {
-        logEntries.map((entry, i) => 
-          // TODO: a bit of a hack; clean up
-          entry.startsWith('http://api.qrserver.com') 
-          ? <div className='entry' key={ i.toString() }><img src={ entry }/></div>
-          : <div className='entry' key={ i.toString() }>{ entry }</div>)
+        logEntries.map((entry, i) => {
+          let match = entry.match(IMAGE_REGEX) 
+
+          return match
+          ? <div className='entry' key={ i.toString() }><img src={ match[1] }/></div>
+          : <div className='entry' key={ i.toString() }>{ entry }</div>
+        })
       }
       <div style={{ float:"left", clear: "both" }}
             ref={(el) => { this.messagesEnd = el; }}>
