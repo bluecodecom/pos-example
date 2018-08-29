@@ -45,7 +45,7 @@ export function heartbeat(client, branchExtId, terminal, mocks) {
 
     schedule(
       async () => {
-        await call('period')
+        await call('periodic')
 
         schedulePeriod()
       }, 

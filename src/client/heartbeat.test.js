@@ -50,7 +50,7 @@ it('calls startup, pending and shutdown', async () => {
 
   await expectHeartbeat('startup')
 
-  await expectHeartbeat('period')
+  await expectHeartbeat('periodic')
 
   mockHeartbeat()
 
