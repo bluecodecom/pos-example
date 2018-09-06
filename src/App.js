@@ -5,7 +5,7 @@ import { OrderCard, ProductSelectionCard } from './ordering-components'
 import { PaymentDialog, StatusDialog } from './payment-components'
 import { ModalOverlay, Button } from './util-components'
 import { BlueCodeClient, BASE_URL_SANDBOX } from './client/BlueCodeClient'
-import { CredentialsDialog, getCredentials } from './credentials-components';
+import { CredentialsDialog, getCredentials, getCallbackUrl } from './credentials-components';
 import { RefundDialog } from './refund-components';
 import { MESSAGES, ERROR_NON_CANCELED_TIMEOUTS, ERROR_SYSTEM_FAILURE, ERROR_CANCELED } from './util/error-messages' 
 import * as progress from './client/console-progress'  // eslint-disable-line no-unused-vars
@@ -362,7 +362,8 @@ class App extends Component {
       discountAmount: totalAmount,
       paymentAmount: totalAmount,
       requestedAmount: totalAmount,
-      terminal: getTerminalId()
+      terminal: getTerminalId(),
+      merchant_callback_url: getCallbackUrl() || null
     }
     
     try {

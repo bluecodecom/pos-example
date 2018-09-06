@@ -8,6 +8,7 @@ import { consoleProgress } from './client/console-progress';
 import { getTerminalId } from './terminal-id';
 
 const CREDENTIALS_KEY = 'credentials'
+const CALLBACK_KEY = 'callbackUrl'
 
 /**
  * @param {String} username 
@@ -35,16 +36,26 @@ export function getCredentials() {
   }
 }
 
+export function setCallbackUrl(callbackUrl) {
+  getLocalStorage().setItem(CALLBACK_KEY, callbackUrl)
+}
+
+export function getCallbackUrl() {
+  return getLocalStorage().getItem(CALLBACK_KEY)
+}
+
 export class CredentialsDialog extends Component {
   constructor() {
     super()
 
     let [username, password, branch] = getCredentials() || ['', '', '']
+    let callbackUrl = getCallbackUrl() || ''
 
     this.state = {
       username: username,
       password: password,
       branch: branch,
+      callbackUrl: callbackUrl,
       operator: '',
       isValidating: false
     }
@@ -134,6 +145,9 @@ export class CredentialsDialog extends Component {
       { 
         inputField('branch', 'Branch', 'The branch identifier. See developer portal.', '') 
       }
+      { 
+        inputField('callbackUrl', 'Callback URL', <span>Optional. Webhook URL for QR Code transactions. Check out <a href="https://webhook.site">webhook.site</a></span>, '') 
+      }
 
       <div className='button-bar'>
         {
@@ -153,6 +167,7 @@ export class CredentialsDialog extends Component {
             
             if (isValid) {
               setCredentials(this.state.username, this.state.password, this.state.branch)
+              setCallbackUrl(this.state.callbackUrl)
               this.props.onDone()
             }
           } }>Save</Button>
