@@ -90,7 +90,7 @@ function inflate(price) {
 export function getProducts() {
   return [
     new Product('aubergine', 'aubergines', inflate(1.50)),
-    new Product('avocado', 'avocados', inflate(2.20)),
+    new Product('avocado', 'avocados', inflate(25)),
     new Product('broccoli', 'heads of broccoli', inflate(3.20)),
     new Product('corn', 'corn cobs', inflate(1.20)),
     new Product('beetroot', 'beetroots', inflate(2.70)),
