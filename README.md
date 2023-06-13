@@ -1,6 +1,6 @@
 # ⚠️ DEPRECATED
 
-The current POS example implemenation is found here [acquibase/assets/pos-example](https://github.com/bluecodecom/acquibase/tree/master/assets/pos-example)
+The current POS example implemenation is found at [acquibase/assets/pos-example](https://github.com/bluecodecom/acquibase/tree/master/assets/pos-example)
 
 
 # Blue Code POS Reference Implementation
